@@ -1,0 +1,1 @@
+{"name":"connected-village-school","private":true,"type":"module","scripts":{"start":"node server.mjs","test":"node tests/api-test.mjs"}}
