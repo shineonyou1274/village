@@ -1,0 +1,4 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const text=fs.readFileSync('dist/campus.js','utf8');const refresh=text.slice(text.indexOf('async function refresh(){'),text.indexOf("$('.campus-tabs')"));
+for(const status of [200,503,401]){const states=[];const c={busy:false,demo:false,token:'test',data:{library:true},request:async()=>{if(status!==200)throw Object.assign(Error('test'),{status});return {library:true}},display(){states.push(c.busy)},message(){},$:()=>({hidden:false})};vm.createContext(c);vm.runInContext(refresh,c);await c.refresh();assert.equal(c.busy,false);if(status===401)assert.equal(states.length,0);else assert.equal(states.at(-1),false,'controls must render after polling lock is released');}
+console.log('PASS: polling restores controls on success/error; expired login stays at entry');
