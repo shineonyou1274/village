@@ -1,3 +1,4 @@
+import {missionSchema} from './mission.mjs';
 export const schema=[
 `CREATE TABLE IF NOT EXISTS rooms(id TEXT PRIMARY KEY,code TEXT NOT NULL UNIQUE,teacher_hash TEXT NOT NULL,day INTEGER NOT NULL DEFAULT 1,weather INTEGER NOT NULL DEFAULT 0,market INTEGER NOT NULL DEFAULT 0,paused INTEGER NOT NULL DEFAULT 0,phase TEXT NOT NULL DEFAULT '개인 성장',coop TEXT NOT NULL DEFAULT '[0,0,0,0]',goal INTEGER NOT NULL DEFAULT 10,version INTEGER NOT NULL DEFAULT 0,created INTEGER NOT NULL)`,
 `CREATE TABLE IF NOT EXISTS players(id TEXT PRIMARY KEY,room TEXT NOT NULL REFERENCES rooms(id),name TEXT NOT NULL,token_hash TEXT NOT NULL UNIQUE,state TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 0,last_seen INTEGER NOT NULL DEFAULT 0,CHECK(json_extract(state,'$.coins')>=0),CHECK(json_extract(state,'$.stock[0]')>=0),CHECK(json_extract(state,'$.stock[1]')>=0),CHECK(json_extract(state,'$.stock[2]')>=0),CHECK(json_extract(state,'$.stock[3]')>=0))`,
@@ -21,5 +22,6 @@ INSERT INTO offers(id,room,seller,give_item,give_qty,want_item,want_qty,created)
 UPDATE offers SET status='accepted',buyer=NEW.actor WHERE id=NEW.offer AND NEW.kind='accept';
 UPDATE offers SET status='cancelled' WHERE id=NEW.offer AND NEW.kind='cancel';
 UPDATE rooms SET coop=json_set(coop,'$['||NEW.item||']',json_extract(coop,'$['||NEW.item||']')+NEW.qty) WHERE id=NEW.room AND NEW.kind='donate';
-END`
+END`,
+...missionSchema
 ];
