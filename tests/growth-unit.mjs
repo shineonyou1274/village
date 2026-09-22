@@ -5,6 +5,8 @@ async function req(path,body,token){const r=await api(new Request('http://test'+
 try{
 const room=(await req('/api/create',{setupKey:'test-key',size:2})).data,t=room.teacherKey,student=room.students[0].code;let seq=0;
 const act=(b)=>req('/api/action',{requestId:'growth-check-'+(++seq),...b},student);
+// Mature farm fixture for the multi-crop regression suite.
+const mature=ok(await req('/api/state',null,student));mature.me.state.farm.picked=80;sql.prepare('UPDATE players SET state=? WHERE id=?').run(JSON.stringify(mature.me.state),mature.me.id);
 for(let i=0;i<5;i++){ok(await act({action:'plant',plot:i,crop:i}));ok(await act({action:'water',plot:i}));assert.equal((await act({action:'harvest',plot:i})).status,409)}clock+=61000;
 for(let i=0;i<5;i++)ok(await act({action:'harvest',plot:i}));
 let d=ok(await req('/api/growth',null,student));assert.deepEqual(d.stock,[2,3,2,4,2]);assert(d.badges.find(b=>b.id==='variety-5').earned);assert(d.badges.find(b=>b.id==='first-harvest').earned);

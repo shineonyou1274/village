@@ -12,3 +12,5 @@ export function cropPrice(c,room){const price=Math.round(c.price*[1,1.25,1.1,1.4
 
 export function tradeStock(s,i){return i<4?s.stock[i]:garden(s).stock[i-3]}
 export function changeTrade(s,i,n){if(i<4)s.stock[i]+=n;else garden(s).stock[i-3]+=n}
+export const cropTargets=[0,6,16,30,50];
+export function farmProgress(s){const count=s.farm?.picked||0;return {count,targets:cropTargets,unlocked:cropTargets.map((n,i)=>count>=n||(s.garden?.harvested?.[i]||0)>0||s.farm?.plots?.some(p=>p.seeded&&(p.crop||0)===i)),cowTarget:80,cowPrice:100,cow:s.cow||null}}
