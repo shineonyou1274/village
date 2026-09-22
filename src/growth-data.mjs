@@ -9,3 +9,6 @@ export function changeCrop(s,i,n){if(i===0)s.stock[0]+=n;else garden(s).stock[i]
 export function growTime(p){return crops[p.crop||0]?.ms||20000}
 
 export function cropPrice(c,room){const price=Math.round(c.price*[1,1.25,1.1,1.4,1.1,.8][room.weather]);return room.market?price:Math.floor(price*.8)}
+
+export function tradeStock(s,i){return i<4?s.stock[i]:garden(s).stock[i-3]}
+export function changeTrade(s,i,n){if(i<4)s.stock[i]+=n;else garden(s).stock[i-3]+=n}
