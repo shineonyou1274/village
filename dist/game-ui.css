@@ -8,3 +8,5 @@
 .farm3d-viewport canvas{touch-action:none;cursor:grab}.farm3d-viewport canvas:active{cursor:grabbing}@media(max-width:760px){.game-layout .view-switch{width:calc(100% - 104px);display:inline-flex}.game-layout .view-switch button{padding:8px 6px}.work-shortcut{margin-top:0}.game-layout .farm3d-controls button{min-height:36px}}
 
 @media(max-width:760px){.game-layout .village-mode .farm3d-viewport{height:350px;min-height:310px}}
+
+.campus-shortcuts{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}.campus-shortcuts a{background:#30443f;color:#fff0c8;border-radius:12px;padding:12px 16px;font-size:12px;text-decoration:none;min-height:44px;display:flex;align-items:center}.campus-shortcuts a:last-child{background:#e3d9bd;color:#405344}
