@@ -1,3 +1,4 @@
+import {careerAction} from './career-data.mjs';
 import {growthApi,prepareGrowth,prepareGardenRole} from './growth.mjs';
 import {crops,questions,garden,growTime,changeCrop,tradeStock,changeTrade,farmProgress} from './growth-data.mjs';
 import {campusApi,managedAuth} from './campus.mjs';
@@ -25,6 +26,7 @@ if(['plant','water','harvest','produce'].includes(kind)&&room.weather===3&&s.rep
 if(['plant','water','harvest'].includes(kind)){const index=int(input.plot,0,s.farm.plots.length-1),plot=s.farm.plots[index];if(kind==='plant'){if(plot.seeded)err('이미 씨앗이 심어져 있어요.',409);plot.crop=int(input.crop??0,0,4);if(!farmProgress(s).unlocked[plot.crop])err('누적 수확으로 이 씨앗을 먼저 열어 주세요.');plot.seeded=true;note(s,`${index+1}번 밭에 씨를 심었어요.`)}if(kind==='water'){if(!plot.seeded||plot.wateredAt)err('물을 줄 수 있는 상태가 아니에요.',409);plot.wateredAt=now;note(s,`${index+1}번 밭에 물을 줬어요.`)}if(kind==='harvest'){if(!plot.wateredAt||now-plot.wateredAt<growTime(plot))err('아직 작물이 자라고 있어요.',409);const crop=crops[plot.crop||0],amount=crop.yield+s.level-1;changeCrop(s,crop.id,amount);garden(s).harvested[crop.id]+=amount;s.farm.picked+=amount;s.farm.plots[index]=crop.id===2&&(plot.round||0)<2?{seeded:true,crop:2,wateredAt:now,round:(plot.round||0)+1}:{seeded:false,wateredAt:0};note(s,'수확한 '+crop.name+'를 보관소에 넣었어요.')}}
 else if(kind==='crop_donate'||kind==='crop_sell'){({item,qty}=prepareGrowth(input,s,room));if(kind==='crop_donate')offerData={season:input.season??1}}
 else if(kind==='garden_role'){({item,qty}=prepareGardenRole(input,s));offerData={season:input.season??1}}
+else if(['career_answer','career_save','tutorial_hide'].includes(kind)){careerAction(s,input)}
 else if(kind==='cow_adopt'){if(s.cow)err('이미 젖소를 기르고 있어요.');if(s.farm.picked<80||s.coins<100)err('누적 수확 80개와 100코인이 필요해요.');s.coins-=100;s.cow={fedAt:0,watered:false,milkDay:0};note(s,'젖소를 입양했어요. 먹이와 물을 챙겨 주세요.')}
 else if(kind==='cow_feed'){if(!s.cow)err('젖소를 먼저 입양해 주세요.');if(s.cow.milkDay>=room.day)err('이번 수업일의 돌봄을 마쳤어요.');if(s.cow.fedAt)err('이미 먹이를 주었어요.');if(s.stock[0]<1)err('먹이 체험에 사용할 상추 1개가 필요해요.');s.stock[0]--;s.cow.fedAt=now;note(s,'젖소에게 먹이를 챙겨 줬어요.')}
 else if(kind==='cow_water'){if(!s.cow)err('젖소를 먼저 입양해 주세요.');s.cow.watered=true}
