@@ -1,3 +1,4 @@
+import {growthSchema} from './growth.mjs';
 import {campusSchema} from './campus.mjs';
 import {missionSchema} from './mission.mjs';
 export const schema=[
@@ -24,5 +25,5 @@ UPDATE offers SET status='accepted',buyer=NEW.actor WHERE id=NEW.offer AND NEW.k
 UPDATE offers SET status='cancelled' WHERE id=NEW.offer AND NEW.kind='cancel';
 UPDATE rooms SET coop=json_set(coop,'$['||NEW.item||']',json_extract(coop,'$['||NEW.item||']')+NEW.qty) WHERE id=NEW.room AND NEW.kind='donate';
 END`,
-...missionSchema,...campusSchema
+...missionSchema,...campusSchema,...growthSchema
 ];
