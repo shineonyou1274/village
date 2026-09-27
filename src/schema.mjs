@@ -2,6 +2,8 @@ import {growthSchema} from './growth.mjs';
 import {campusSchema} from './campus.mjs';
 import {missionSchema} from './mission.mjs';
 export const schema=[
+`CREATE TABLE IF NOT EXISTS market_visitors(player TEXT PRIMARY KEY REFERENCES players(id),room TEXT NOT NULL,seen INTEGER NOT NULL,spot INTEGER NOT NULL DEFAULT 0,greeting TEXT NOT NULL DEFAULT '',greeted INTEGER NOT NULL DEFAULT 0)`,
+`CREATE INDEX IF NOT EXISTS market_visitors_room_seen ON market_visitors(room,seen)`,
 `CREATE TABLE IF NOT EXISTS rooms(id TEXT PRIMARY KEY,code TEXT NOT NULL UNIQUE,teacher_hash TEXT NOT NULL,day INTEGER NOT NULL DEFAULT 1,weather INTEGER NOT NULL DEFAULT 0,market INTEGER NOT NULL DEFAULT 0,paused INTEGER NOT NULL DEFAULT 0,phase TEXT NOT NULL DEFAULT '개인 성장',coop TEXT NOT NULL DEFAULT '[0,0,0,0]',goal INTEGER NOT NULL DEFAULT 10,version INTEGER NOT NULL DEFAULT 0,created INTEGER NOT NULL)`,
 `CREATE TABLE IF NOT EXISTS players(id TEXT PRIMARY KEY,room TEXT NOT NULL REFERENCES rooms(id),name TEXT NOT NULL,token_hash TEXT NOT NULL UNIQUE,state TEXT NOT NULL,version INTEGER NOT NULL DEFAULT 0,last_seen INTEGER NOT NULL DEFAULT 0,CHECK(json_extract(state,'$.coins')>=0),CHECK(json_extract(state,'$.stock[0]')>=0),CHECK(json_extract(state,'$.stock[1]')>=0),CHECK(json_extract(state,'$.stock[2]')>=0),CHECK(json_extract(state,'$.stock[3]')>=0))`,
 `CREATE INDEX IF NOT EXISTS players_room ON players(room)`,

@@ -60,7 +60,31 @@ if(i)statements.push(db.prepare('INSERT INTO offers(id,room,seller,give_item,giv
 await db.batch(statements);}
 const a=await auth(new Request(req.url,{headers:{authorization:'Bearer '+token}}),db);return json({...await snapshot(db,a),token});}
 if(u.pathname==='/api/join'&&req.method==='POST'){const roomCode=String(b.roomCode||'').trim().toUpperCase(),token=String(b.code||'').trim().toLowerCase();await limiter(db,'join:'+await hash((req.headers.get('cf-connecting-ip')||'local')+roomCode),Date.now(),160);const a=await auth(new Request(req.url,{headers:{authorization:'Bearer '+token}}),db);if(a.room.code!==roomCode)err('학급 코드와 입장 코드를 확인해 주세요.',401);if(a.player)await db.prepare('UPDATE players SET last_seen=? WHERE id=?').bind(Date.now(),a.player.id).run();return json({...await snapshot(db,a),token})}
-let a=await auth(req,db);const managed=b.managedRoom||u.searchParams.get('classroom');a=await managedAuth(db,a,managed);if(u.pathname==='/api/community'&&req.method==='GET'){
+let a=await auth(req,db);const managed=b.managedRoom||u.searchParams.get('classroom');a=await managedAuth(db,a,managed);if(u.pathname==='/api/market-presence'){
+if(!a.player)err('학생으로 입장해 주세요.',403);
+const now=Date.now();
+if(req.method==='POST'){
+ if(b.action==='leave'){await db.prepare('DELETE FROM market_visitors WHERE player=?').bind(a.player.id).run()}
+ else {
+  if(a.room.paused)err('교사가 수업을 일시정지했어요.',423);
+  if(!['visit','greet'].includes(b.action))err('장터 행동을 확인해 주세요.');
+  await limiter(db,'market:'+a.player.id,now,30);
+  if(b.action==='visit'){
+   const spot=int(b.spot,0,11);
+   await db.prepare('INSERT INTO market_visitors(player,room,seen,spot) VALUES(?,?,?,?) ON CONFLICT(player) DO UPDATE SET seen=excluded.seen,spot=excluded.spot').bind(a.player.id,a.room.id,now,spot).run();
+  }else{
+   if(!['wave','thanks','together'].includes(b.greeting))err('준비된 인사를 골라 주세요.');
+   const previous=await db.prepare('SELECT seen,greeted FROM market_visitors WHERE player=?').bind(a.player.id).first();
+   if(!previous||previous.seen<now-35000)err('장터에 먼저 들어와 주세요.',409);
+   if(previous.greeted>now-5000)err('인사는 5초 뒤에 다시 보낼 수 있어요.',429);
+   await db.prepare('UPDATE market_visitors SET greeting=?,greeted=?,seen=? WHERE player=?').bind(b.greeting,now,now,a.player.id).run();
+  }
+ }
+}else if(req.method!=='GET')err('지원하지 않는 요청입니다.',405);
+const rows=await db.prepare('SELECT v.player,v.spot,v.greeting,v.greeted,p.name,p.state FROM market_visitors v JOIN players p ON p.id=v.player WHERE v.room=? AND v.seen>? ORDER BY v.player').bind(a.room.id,now-35000).all();
+return json({me:a.player.id,serverTime:now,visitors:rows.results.map(p=>({id:p.player,name:JSON.parse(p.state).name||p.name,spot:p.spot,greeting:p.greeted>now-12000?p.greeting:''}))});
+}
+if(u.pathname==='/api/community'&&req.method==='GET'){
 const rows=await db.prepare(`WITH history AS (
 SELECT actor,kind,qty,COALESCE(json_extract(state1,'$.coins'),0) coins,
 LAG(COALESCE(json_extract(state1,'$.coins'),0),1,80) OVER(PARTITION BY actor ORDER BY created,rowid) previous
