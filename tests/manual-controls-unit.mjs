@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import * as THREE from '../dist/vendor/three.module.js';
+const s=fs.readFileSync('dist/farm3d.js','utf8');
+const source=s.slice(s.indexOf('function moveTo(point)'),s.indexOf('moveBar.onclick='));
+const c={THREE,farmView:true,job:null,workQueue:[],window:{},manualTarget:null,farmer:{position:new THREE.Vector3(0,.1,0)},cameraAngle:0,status(){}};
+vm.createContext(c);vm.runInContext(source,c);
+c.moveTo(new THREE.Vector3(99,0,-99));assert.equal(c.manualTarget.x,12);assert.equal(c.manualTarget.z,-7);
+c.manualTarget=null;c.stepDirection('right');assert.equal(c.manualTarget.x,1.5);assert.equal(c.manualTarget.z,0);
+c.manualTarget=null;c.cameraAngle=Math.PI/2;c.stepDirection('right');assert(Math.abs(c.manualTarget.z+1.5)<1e-9);
+c.manualTarget=null;c.job={};c.stepDirection('up');assert.equal(c.manualTarget,null,'manual movement must not interrupt farm transactions');
+c.job=null;c.workQueue=[{}];c.stepDirection('up');assert.equal(c.manualTarget,null);
+c.workQueue=[];c.farmView=false;c.stepDirection('up');assert.equal(c.manualTarget,null);
+console.log('PASS: movement bounds, camera-relative directions, work and screen guards');

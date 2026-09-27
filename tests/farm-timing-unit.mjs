@@ -5,7 +5,7 @@ const source=fs.readFileSync('dist/farm3d.js','utf8');
 const prefix=source.slice(source.indexOf('function frame(now){'),source.indexOf('focus.lerp(',source.indexOf('function frame(now){')));
 function run(interval,hidden=false){
  const steps=[];
- const context={requestAnimationFrame(){},last:0,lastSync:0,window:{gamePreferences:{}},document:{hidden,querySelector:()=>({open:false})},viewport:{dataset:{webgl:'ready'}},farmView:true,previousFarmView:true,villageRoot:{},syncBeds(){},syncIllustrations(){},updateFarmer(dt){steps.push(dt)}};
+ const context={requestAnimationFrame(){},last:0,lastSync:0,window:{gamePreferences:{}},document:{hidden,querySelector:()=>({open:false})},viewport:{dataset:{webgl:'ready'}},farmView:true,previousFarmView:true,villageRoot:{},moveBar:{},syncBeds(){},syncIllustrations(){},updateFarmer(dt){steps.push(dt)}};
  vm.createContext(context);vm.runInContext(prefix+'}',context);
  for(let now=interval;now<=10000;now+=interval)context.frame(now);
  return steps;
