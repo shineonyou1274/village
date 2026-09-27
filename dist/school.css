@@ -2,3 +2,7 @@
 
 [hidden]{display:none!important}
 .district3d{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;padding:9px 13px;background:#fffdf1ed;border:2px solid white;border-radius:13px;box-shadow:0 3px 10px #123a282b;font-size:12px;white-space:nowrap}.district3d:hover{transform:translate(-50%,-55%)}.village-mode .farm-bottom,.village-mode .farm-queue,.village-mode .farm-guide,.village-mode #farmAlert{display:none}.village-mode .farm3d-viewport{margin-top:15px}@media(max-width:760px){.district3d{font-size:10px;padding:6px 8px}}
+
+.trial-entry{background:#edf5e9;border:1px solid #c6ddba;border-radius:16px;padding:18px;margin:16px 0}.trial-entry p{font-size:14px;line-height:1.7}.trial-guide{margin:12px auto;padding:12px 18px;max-width:1100px;border-radius:14px;background:#f5f4df;color:#254e40}.trial-guide[hidden]{display:none}.trial-guide summary{cursor:pointer;font-weight:700}.trial-guide p,.trial-guide li{font-size:14px;line-height:1.7}.trial-guide a{color:inherit;text-decoration:underline}
+
+body[data-trial="true"] .first-steps{display:none}
