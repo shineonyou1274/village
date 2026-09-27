@@ -1,0 +1,5 @@
+import vm from 'node:vm';import fs from 'node:fs';import assert from 'node:assert/strict';
+let queued=[],cleared=[],id=0;const context={setTimeout:(fn,ms)=>{queued.push({fn,ms,id:++id});return id},clearTimeout:i=>cleared.push(i),console};vm.createContext(context);vm.runInContext(fs.readFileSync('dist/polling.js','utf8'),context);const p=context.ShinyPolling;
+assert.equal(p.growthNeeded('farm'),false);assert.equal(p.growthNeeded('study'),false);assert.equal(p.growthNeeded('activity'),true);assert.equal(p.growthNeeded('passport'),true);assert.equal(p.delay('campus',()=>0),10000);assert.equal(p.delay('campus',()=>.999),14995);assert.notEqual(p.delay('school',()=>.1),p.delay('school',()=>.9));
+let calls=0,finish;const stop=p.start(()=>{calls++;return new Promise(r=>finish=r)},'campus');const task=queued.shift();const running=task.fn();assert.equal(calls,1);assert.equal(queued.length,0,'No next timer while a request is unresolved');finish();await running;assert.equal(queued.length,1);stop();assert.equal(cleared.length,1);
+console.log('PASS: screen eligibility, bounded jitter, completion-based scheduling, cancellation');
