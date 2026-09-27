@@ -8,6 +8,7 @@ let d=ok(await act({action:'merge_start'}));const id=d.me.state.mergeGame.id;
 assert.equal((await act({action:'merge_move',gameId:id,from:0,to:0})).status,400);
 assert.equal((await act({action:'merge_move',gameId:id,from:0,to:8})).status,400);
 assert.equal((await act({action:'merge_move',gameId:'wrong',from:0,to:1})).status,409);
+d=ok(await act({action:'merge_move',gameId:id,from:0,to:12}));assert.equal(d.me.state.mergeGame.board[0],0);assert.equal(d.me.state.mergeGame.board[12],1);assert.equal(d.me.state.mergeGame.moves,0);assert.equal(d.me.state.mergeGame.board.reduce((n,v)=>n+(v?2**(v-1):0),0),16);
 let final;
 async function win(){let x=ok(await act({action:'merge_start'}));while(!x.me.state.mergeGame.complete){const g=x.me.state.mergeGame;let pair;for(let i=0;i<16&&!pair;i++)for(let j=i+1;j<16;j++)if(g.board[i]&&g.board[i]===g.board[j]){pair=[i,j];break}assert.ok(pair);final={action:'merge_move',requestId:'merge-finish-'+(++seq),gameId:g.id,from:pair[0],to:pair[1]};x=ok(await req('/api/action',final,token));}return x.me.state}
 assert.equal((await win()).coins,90);assert.equal(ok(await req('/api/action',final,token)).me.state.coins,90);assert.equal((await win()).coins,90);clock+=86400000;assert.equal((await win()).coins,100);
