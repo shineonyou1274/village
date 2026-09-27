@@ -28,3 +28,5 @@
 시각 자료와 상세 결과: `test-output/market-ui/`, `test-output/market-presence-load.json`.
 
 추가 통과: 36초 동안 갱신하지 않은 방문 자동 만료, tests/market-own-stall.cjs의 내 가판대 취소와 재고 복원. 저장 변경은 market_visitors 테이블과 인덱스 추가이며 기존 학생 재고·기록 이전은 없습니다.
+
+직접 입장 개선: tests/market-entry.cjs에서 기존 지도 그림 터치 시 URL 변경 시간 초과로 실패를 확인. 수정 후 1360px/390px 실제 캔버스 터치, 표지 클릭, 키보드 Enter, 마을 복귀와 브라우저 뒤로 가기 통과.

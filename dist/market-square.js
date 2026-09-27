@@ -1,7 +1,7 @@
 /* A shared market scene. Inventory remains owned by the existing transactional API. */
 (()=>{
  const greetings={wave:'👋 안녕!',thanks:'💛 고마워!',together:'🌱 같이 도와주자!'};
- let visitors=[],spot=8,selected='',page=0,lastKey='',activeToken='',busy=false,timer=null,notice='친구들의 방문을 확인하고 있어요.',lastGreeting=0;
+ let visitors=[],spot=8,selected='',page=0,lastKey='',activeToken='',busy=false,timer=null,notice='친구들의 방문을 확인하고 있어요.',lastGreeting=0,wasMarket=false;
  const active=()=>window.classroomActive&&document.body.dataset.screen==='market'&&!document.hidden;
  const esc=escapeHtml;
  const hash=id=>Array.from(id).reduce((n,c)=>n+c.charCodeAt(0),0);
@@ -21,7 +21,7 @@
   const key=JSON.stringify([d.me.id,d.me.version,d.room.market,d.room.paused,d.offers,visitors,selected,page,notice,schoolPending]);
   if(key===lastKey){position();return}lastKey=key;const previousHero=$('#marketHero');
   root.innerHTML=`<div class="market-heading"><div><small>SHINY VILLAGE · 우리 반 만남의 광장</small><h2>반가워, 장터에서 만나!</h2><p>${d.room.market?'가판대에 물건을 맡기고 친구에게 인사해요.':'지금은 장터 준비 시간이에요. 친구와 인사는 할 수 있어요.'}</p></div><span class="market-count">함께 있는 ${visitors.length}명</span></div>
-  <div class="market-toolbar"><button id="newSchoolOffer" ${!d.room.market||d.room.paused?'disabled':''}>＋ 내 가판대에 물건 놓기</button><button data-market-mine>내 물건 보기</button><span id="marketSync" role="status">${esc(notice)}</span></div>
+  <div class="market-toolbar"><button data-market-return>← 마을로</button><button id="newSchoolOffer" ${!d.room.market||d.room.paused?'disabled':''}>＋ 내 가판대에 물건 놓기</button><button data-market-mine>내 물건 보기</button><span id="marketSync" role="status">${esc(notice)}</span></div>
   <div class="market-plaza" aria-label="장터 광장"><div class="market-trees" aria-hidden="true">🌳 🌳</div><div class="market-sign" aria-hidden="true">우리의 작은 장터</div><div class="market-path" aria-hidden="true"></div>
   <div class="market-stalls">${Array.from({length:perPage},(_,i)=>{const p=shown[i],o=p&&(d.offers||[]).find(o=>o.seller===p.id),online=p&&visitors.some(v=>v.id===p.id);return p?`<button class="market-stall ${selected===p.id?'chosen':''}" data-market-peer="${esc(p.id)}"><span class="stall-awning" aria-hidden="true"></span><span class="stall-goods" aria-hidden="true">${o?symbols[o.give_item]+' '+symbols[o.want_item]:'🧺'}</span><b>${esc(p.name)}</b><small>${online?'● 함께 있어요':state.trial?'연습 친구의 가판대':'물건만 맡김'}</small></button>`:'<div class="market-stall vacant"><span class="stall-awning"></span><span class="stall-goods">🧺</span><small>이웃의 가판대 자리</small></div>'}).join('')}</div>
   <div class="market-walk-spots">${Array.from({length:12},(_,i)=>`<button data-market-spot="${i}" aria-label="광장 ${i+1}번 자리로 걷기" style="left:${19+(i%6)*14}%;top:${67+Math.floor(i/6)*18}%"><span aria-hidden="true">·</span></button>`).join('')}</div>
@@ -31,7 +31,7 @@
   if(previousHero)$('#marketHero').replaceWith(previousHero);
   const selfGreeting=visitors.find(p=>p.id===d.me.id)?.greeting;$('#marketHero .market-greeting')?.remove();if(selfGreeting){const bubble=document.createElement('span');bubble.className='market-greeting';bubble.textContent=greetings[selfGreeting];$('#marketHero').append(bubble)}
   $('#newSchoolOffer').onclick=newSchoolOffer;
-  root.onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.dataset.marketPeer){selected=b.dataset.marketPeer;const v=visitors.find(v=>v.id===selected);spot=v?v.spot:(Math.max(0,shown.findIndex(p=>p.id===selected))+6);draw();sync()}
+  root.onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.hasAttribute('data-market-return')){window.villageNavigate('village');return}if(b.dataset.marketPeer){selected=b.dataset.marketPeer;const v=visitors.find(v=>v.id===selected);spot=v?v.spot:(Math.max(0,shown.findIndex(p=>p.id===selected))+6);draw();sync()}
    if(b.hasAttribute('data-market-mine')){selected=d.me.id;draw()}
    if(b.dataset.marketSpot!==undefined){spot=Number(b.dataset.marketSpot);position();sync()}
    if(b.dataset.marketGreet){sendGreeting(b.dataset.marketGreet)}
@@ -45,7 +45,7 @@
  async function sendGreeting(g){if(Date.now()-lastGreeting<5000){toast('인사는 5초 뒤에 다시 보낼 수 있어요.');return}if(busy){toast('입장을 확인하고 있어요. 잠시 뒤 인사해 주세요.');return}lastGreeting=Date.now();await sync(g);toast(greetings[g])}
  function trade(id){const o=classroomData.offers.find(o=>o.id===id);if(!o)return;const own=o.seller===classroomData.me.id,here=visitors.some(v=>v.id===o.seller);modal(`<h2>${own?'가판대에서 물건을 가져올까요?':'서로의 물건을 확인해요'}</h2><div class="market-meeting"><div>${avatar(classroomData.me.id,true)}<b>${esc(state.name)}</b><span>${symbols[o.want_item]} ${items[o.want_item]} ${o.want_qty}개</span></div><span class="meeting-arrow">↔</span><div>${avatar(o.seller)}<b>${esc(o.seller_name)}</b><span>${symbols[o.give_item]} ${items[o.give_item]} ${o.give_qty}개</span></div></div><p>${own?'맡겨 둔 물건이 내 보관함으로 돌아옵니다.':here?'친구가 올린 제안에 내가 동의하면 교환됩니다.':'친구가 미리 맡긴 물건이에요. 지금 자리에 없어도 제안대로 교환할 수 있어요.'}</p><div class="dialog-actions"><button data-close>돌아가기</button><button id="confirmSchoolTrade" class="primary">${own?'제안 취소하기':'이 물건으로 교환하기'}</button></div>`);$('#confirmSchoolTrade').onclick=async()=>{const ok=await schoolAction({action:own?'cancel':'accept',offer:id});if(ok){close();notice=own?'물건을 보관함으로 가져왔어요':'🎁 물건이 서로의 보관함으로 건너갔어요!';draw();const root=$('#marketSquare');root?.classList.add('trade-complete');setTimeout(()=>root?.classList.remove('trade-complete'),1500);toast(notice)}}}
  const previous=renderPanel;renderPanel=function(){if(window.classroomActive&&document.body.dataset.screen==='market'){draw();return}previous()};
- function changed(){if(active()){draw();sync()}else{leave()}}
+ function changed(){if(active()){draw();if(!wasMarket){const root=$('#marketSquare');root?.classList.remove('market-arriving');void root?.offsetWidth;root?.classList.add('market-arriving');const heading=root?.querySelector('h2');heading?.setAttribute('tabindex','-1');heading?.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'})}wasMarket=true;sync()}else{wasMarket=false;leave()}}
  window.addEventListener('resize',()=>{lastKey='';draw()});window.addEventListener('village-screen-change',changed);document.addEventListener('visibilitychange',changed);
  window.addEventListener('pagehide',()=>{if(activeToken)fetch('/api/market-presence',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+activeToken},body:JSON.stringify({action:'leave'}),keepalive:true}).catch(()=>{})});
  async function tick(){if(active())await sync();else if(activeToken)await leave();timer=setTimeout(tick,8000+Math.random()*3000)}
