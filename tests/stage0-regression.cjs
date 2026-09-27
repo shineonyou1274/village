@@ -11,7 +11,7 @@ async function check(mode,name,fn){try{const details=await fn();results.push({mo
 async function api(route,body,token){const r=await fetch(base+route,{method:body?'POST':'GET',headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});const d=await r.json();if(!r.ok)throw Error(route+': '+r.status);return d;}
 function requireThat(v,msg){if(!v)throw Error(msg)}
 async function screen(name){await page.screenshot({path:path.join(out,name+'.png'),fullPage:true});}
-async function tab(name){await page.locator('.compact-tabs button').filter({hasText:new RegExp('^'+name+'$')}).click();}
+async function tab(name){await page.locator('.compact-tabs button').filter({hasText:new RegExp(name==='마을'?'^(우리 )?마을$':'^'+name+'$')}).click();}
 // Read-only telemetry injected into the response in the test browser. No product file or game state is changed.
 const probe=`window.__stage0={farm:farmView,villageVisible:villageRoot.visible,villageObjects:villageRoot.children.length,plots:bedGroups.slice(0,ensureFarm().plots.length).map((b,i)=>{const corners=[[-1.1,-.9],[1.1,-.9],[1.1,.9],[-1.1,.9]].map(([x,z])=>{const v=b.g.localToWorld(new THREE.Vector3(x,.32,z)).project(camera);return [(v.x*.5+.5)*viewport.clientWidth,(-v.y*.5+.5)*viewport.clientHeight]});return {i,corners,seeded:ensureFarm().plots[i].seeded,watered:ensureFarm().plots[i].wateredAt,seedsVisible:b.seeds.some(s=>s.visible),plantsVisible:b.plants.some(s=>s.visible),scale:b.plants[0].scale.x,art:b.art?.visible?b.art.material.map.offset.toArray():null}})};`;
 (async()=>{

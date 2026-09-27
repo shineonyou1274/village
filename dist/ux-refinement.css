@@ -15,3 +15,24 @@ html{scrollbar-gutter:stable}body.compact-shell{overflow-x:clip}
 .farm-current-status{display:block;background:#f8faf2;padding:10px 14px;font-size:14px;color:#294b38}.village-mode .farm-current-status{display:none}.compact-shell .farm3d-labels{z-index:2}.compact-shell .farm3d-controls{z-index:4}
 
 .compact-shell .farm-top h2,.compact-shell .farm-top>span{display:none}.compact-shell .farm-top{padding:8px 12px!important}.compact-shell .farm-owner{padding:7px 10px;font-size:14px}.compact-shell .seed-picker{display:flex!important;gap:6px;flex-wrap:wrap;padding:0 12px;margin:4px 0!important}.compact-shell .seed-picker button{flex:0 1 auto;min-width:100px;padding:6px 12px;min-height:42px}.compact-shell .farm-progression{padding:9px 12px;margin:6px 0}.compact-shell .farm-guide{margin:4px 12px 8px!important}.compact-shell .farm-queue[hidden]{display:none!important}
+
+/* Shared student shell: same navigation and width across both document entries. */
+html:has(body.compact-shell){background:#f3f5f3;color-scheme:light}
+.compact-shell{min-height:100vh}
+.compact-shell>header,.campus-shell>header{height:64px!important}
+.compact-shell header .brand{font-weight:700;color:#263f3b;text-decoration:none}
+.compact-shell>.compact-topline{background:#fff;padding:8px 16px;font-size:12px;min-height:58px}
+.compact-shell>.compact-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.compact-shell>.compact-tabs button{font-size:14px;min-width:0;min-height:48px;padding:8px 4px;line-height:1.35}
+.village-sections{box-sizing:border-box;width:min(1200px,100%);margin:0 auto 12px;padding:0 16px;display:flex;gap:8px}
+.village-sections button{min-height:44px;padding:8px 18px;border:1px solid #bdcfc4;border-radius:10px;color:#285c4c;background:#fff}
+.compact-shell .passport-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}
+.compact-shell[data-screen=passport][data-passport-section=travel] #travelPage{display:block!important;padding:16px}
+.compact-shell #travelPage .travel-intro{display:none}
+.compact-shell .campus-map{background:#e8eee1;gap:14px;padding:14px}
+.compact-shell .village-stop{background:#f9fbf4;color:#285c4c;border-color:#adc3ad}
+.compact-shell .village-stop small,.compact-shell #travelGate,.compact-shell #travelPage .small-note{color:#476347}
+.compact-shell #passportOriginal .passport h2{display:none}
+@media(max-width:740px){.compact-shell>header,.campus-shell>header{height:54px!important}.compact-shell>.compact-tabs{grid-template-columns:repeat(5,minmax(0,1fr));padding:0 8px;gap:3px}.compact-shell>.compact-tabs button{font-size:11px;padding:6px 2px}.compact-shell header .brand{display:flex!important;font-size:15px}.compact-shell>.compact-topline{padding:8px 12px;font-size:11px}.compact-shell .passport-tabs button{font-size:11px;min-width:0}.compact-shell #passportOriginal{padding:0 12px 16px}.compact-shell #travelPage .card{padding:12px}.compact-shell .campus-map{padding:8px;gap:8px}}
+
+.compact-shell[data-screen=passport] #status:not(.error){display:none}
