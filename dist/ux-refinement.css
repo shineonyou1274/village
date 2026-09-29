@@ -53,3 +53,4 @@ html:has(body.compact-shell){background:#f3f5f3;color-scheme:light}
 
 .first-harvest-notice{display:flex;align-items:center;gap:12px;margin:12px;padding:14px 18px;background:#fff5d7;border:1px solid #dfca8b;border-radius:14px}.first-harvest-notice[hidden]{display:none}.first-harvest-notice p{margin:6px 0 0;line-height:1.6;font-size:15px}.first-harvest-notice button{flex-shrink:0;min-height:44px}.trial-growth-note{line-height:1.6;font-size:14px}@media(max-width:600px){.first-harvest-notice{align-items:stretch;flex-direction:column}}
 .compact-shell:not([data-screen=farm]) .first-harvest-notice{display:none}
+.first-harvest-notice{position:fixed;right:20px;bottom:20px;width:min(420px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;box-sizing:border-box;z-index:60;margin:0;box-shadow:0 8px 30px #17372c35}.first-harvest-notice{flex-direction:column;align-items:stretch}@media(max-width:600px){.first-harvest-notice{right:16px;bottom:16px}}

@@ -1,0 +1,18 @@
+const fs=require('fs'),assert=require('assert/strict'),{createRequire}=require('module');
+const {chromium}=createRequire('C:/Users/경남교육청/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/package.json')('playwright');
+const base=process.env.TEST_URL||'http://127.0.0.1:8801';
+(async()=>{const results=[],browser=await chromium.launch({channel:'msedge',headless:true});fs.mkdirSync('test-output/trial-market-journey',{recursive:true});
+try{for(const width of [1360,390]){const c=await browser.newContext({viewport:{width,height:900}}),p=await c.newPage();
+async function check(name,fn){try{await fn();results.push({width,name,pass:true})}catch(e){results.push({width,name,pass:false,error:e.message})}}
+await p.goto(base+'/#farm');await p.locator('#trialEntry').click();await p.waitForFunction(()=>window.classroomActive&&window.farm3DReady);
+await p.locator('[data-bed3d="0"]').click();await p.locator('.selected-bed-action').click();await p.waitForFunction(()=>state.farm.plots[0].seeded&&!window.classroomSaving);await p.waitForFunction(()=>!document.querySelector('.selected-bed-action').disabled);await p.locator('.selected-bed-action').click();await p.waitForFunction(()=>state.farm.plots[0].wateredAt>0);await p.waitForFunction(()=>document.querySelector('.selected-bed-action').textContent==='수확하기'&&!document.querySelector('.selected-bed-action').disabled,null,{timeout:30000});await p.locator('.selected-bed-action').click();await p.waitForFunction(()=>state.farm.picked===2);
+await check('harvest notice visible without scrolling',async()=>{assert(await p.locator('.first-harvest-notice').isVisible());const r=await p.locator('.first-harvest-notice').boundingBox();assert(r.y>=0&&r.y+r.height<=900)});
+await p.locator('.first-harvest-notice button').click();await p.locator('.compact-tabs [data-screen=village]').click();await p.locator('[data-plaza-overview]').click();
+await check('overview explains that walking is unavailable',async()=>assert.match(await p.locator('.plaza-tools>p').textContent(),/전체 지도|광장으로 돌아/));await p.locator('[data-plaza-overview]').click();
+// A webview may report hidden even while automation/user input reaches it.
+// Reproduce the reported visibility condition, without replacing application state.
+if(width===1360)await p.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'))});
+await p.route('**/api/plaza',r=>r.abort());
+await check('walk to market and accept a practice offer',async()=>{await p.locator('[data-plaza-market]').click();await p.waitForURL('**/#market',{timeout:12000});await p.locator('.market-stall[data-market-peer]').first().click();await p.locator('[data-market-trade]').first().click();const before=await p.evaluate(()=>[...state.stock]);await p.locator('#confirmSchoolTrade').click();await p.waitForFunction(()=>!document.querySelector('#dialog').open);const after=await p.evaluate(()=>[...state.stock]);assert.equal(after[0],before[0]-1);assert.equal(after.slice(1).reduce((a,b)=>a+b,0),before.slice(1).reduce((a,b)=>a+b,0)+1);await p.reload();await p.waitForFunction(()=>window.classroomActive);assert.deepEqual(await p.evaluate(()=>[...state.stock]),after)});
+await p.screenshot({path:`test-output/trial-market-journey/${process.env.PHASE||'after'}-${width}.png`,fullPage:true});await c.close();}
+}finally{await browser.close();fs.writeFileSync(`test-output/trial-market-journey/${process.env.PHASE||'after'}.json`,JSON.stringify(results,null,2));console.log(JSON.stringify(results));process.exitCode=results.some(r=>!r.pass)?1:0}})().catch(e=>{console.error(e);process.exitCode=1});
