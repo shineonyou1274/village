@@ -1,3 +1,4 @@
+import {plazaApi} from './plaza.mjs';
 import {careerAction} from './career-data.mjs';
 import {growthApi,prepareGrowth,prepareGardenRole} from './growth.mjs';
 import {crops,questions,garden,growTime,changeCrop,tradeStock,changeTrade,farmProgress} from './growth-data.mjs';
@@ -60,7 +61,7 @@ if(i)statements.push(db.prepare('INSERT INTO offers(id,room,seller,give_item,giv
 await db.batch(statements);}
 const a=await auth(new Request(req.url,{headers:{authorization:'Bearer '+token}}),db);return json({...await snapshot(db,a),token});}
 if(u.pathname==='/api/join'&&req.method==='POST'){const roomCode=String(b.roomCode||'').trim().toUpperCase(),token=String(b.code||'').trim().toLowerCase();await limiter(db,'join:'+await hash((req.headers.get('cf-connecting-ip')||'local')+roomCode),Date.now(),160);const a=await auth(new Request(req.url,{headers:{authorization:'Bearer '+token}}),db);if(a.room.code!==roomCode)err('학급 코드와 입장 코드를 확인해 주세요.',401);if(a.player)await db.prepare('UPDATE players SET last_seen=? WHERE id=?').bind(Date.now(),a.player.id).run();return json({...await snapshot(db,a),token})}
-let a=await auth(req,db);const managed=b.managedRoom||u.searchParams.get('classroom');a=await managedAuth(db,a,managed);if(u.pathname==='/api/market-presence'){
+let a=await auth(req,db);const managed=b.managedRoom||u.searchParams.get('classroom');a=await managedAuth(db,a,managed);if(u.pathname==='/api/plaza')return await plazaApi(req,db,a,b,{json,err,limiter});if(u.pathname==='/api/market-presence'){
 if(!a.player)err('학생으로 입장해 주세요.',403);
 const now=Date.now();
 if(req.method==='POST'){

@@ -1,7 +1,9 @@
+import {plazaSchema} from './plaza.mjs';
 import {growthSchema} from './growth.mjs';
 import {campusSchema} from './campus.mjs';
 import {missionSchema} from './mission.mjs';
 export const schema=[
+...plazaSchema,
 `CREATE TABLE IF NOT EXISTS market_visitors(player TEXT PRIMARY KEY REFERENCES players(id),room TEXT NOT NULL,seen INTEGER NOT NULL,spot INTEGER NOT NULL DEFAULT 0,greeting TEXT NOT NULL DEFAULT '',greeted INTEGER NOT NULL DEFAULT 0)`,
 `CREATE INDEX IF NOT EXISTS market_visitors_room_seen ON market_visitors(room,seen)`,
 `CREATE TABLE IF NOT EXISTS rooms(id TEXT PRIMARY KEY,code TEXT NOT NULL UNIQUE,teacher_hash TEXT NOT NULL,day INTEGER NOT NULL DEFAULT 1,weather INTEGER NOT NULL DEFAULT 0,market INTEGER NOT NULL DEFAULT 0,paused INTEGER NOT NULL DEFAULT 0,phase TEXT NOT NULL DEFAULT '개인 성장',coop TEXT NOT NULL DEFAULT '[0,0,0,0]',goal INTEGER NOT NULL DEFAULT 10,version INTEGER NOT NULL DEFAULT 0,created INTEGER NOT NULL)`,
