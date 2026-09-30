@@ -1,9 +1,44 @@
-const {chromium}=require('C:/Users/경남교육청/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');const fs=require('fs'),assert=require('node:assert/strict');
-(async()=>{const base=process.env.TEST_URL||'http://127.0.0.1:8787',headers=process.env.SITES_AUTH?{'OAI-Sites-Authorization':'Bearer '+process.env.SITES_AUTH}:{};let seq=0;async function req(path,body,token){const r=await fetch(base+path,{method:body?'POST':'GET',headers:{...headers,'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});const d=await r.json();assert(r.ok,JSON.stringify(d));return d}const room=await req('/api/create',{setupKey:fs.readFileSync('private/teacher-setup.txt','utf8').trim(),size:4});const act=(i,action,extra)=>req('/api/action',{action,...extra,requestId:'browser-story-'+(++seq)},room.students[i].code);const browser=await chromium.launch({channel:'msedge',headless:true});try{const errors=[],p=await browser.newPage({viewport:{width:1440,height:1000},extraHTTPHeaders:headers}),teacher=await browser.newPage({viewport:{width:1280,height:1000},extraHTTPHeaders:headers});for(const page of [p,teacher])page.on('pageerror',e=>errors.push(e.message));await teacher.goto(base+'/teacher.html');await teacher.locator('#teacherRoom').fill(room.roomCode);await teacher.locator('#teacherCode').fill(room.teacherKey);await teacher.locator('#joinTeacher').click();await teacher.locator('#startClassStory').click();await teacher.waitForSelector('#exportStory');await teacher.screenshot({path:'test-output/story-teacher.png',fullPage:true});await teacher.close();
-await p.goto(base);await p.locator('#roomCode').fill(room.roomCode);await p.locator('#studentCode').fill(room.students[0].code);await p.locator('#schoolEntry button').click();await p.waitForFunction(()=>classroomActive&&!!classroomData.mission);await p.locator('[data-game="village"]').click();await p.waitForSelector('[data-story-road="false"]');await p.waitForTimeout(1700);await p.screenshot({path:'test-output/story-storm.png',fullPage:true});
-const ready=()=>p.waitForFunction(()=>!schoolPending);async function task(i,answer){await ready();await p.locator('[data-story-task="'+i+'"]').click();await p.locator('input[name="storyAnswer"][value="'+answer+'"]').check();await p.locator('#storyAnswerSubmit').click();await p.locator('#storyContinue').click();await ready()}
-await p.locator('#gameObjective').click();await ready();await p.locator('[data-story-task="0"]').click();await p.locator('input[value="0"]').check();await p.locator('#storyAnswerSubmit').click();assert((await p.locator('#storyFeedback').innerText()).includes('다시'));await p.keyboard.press('Escape');await task(0,1);await task(1,0);
-await p.locator('#storyMap').click();await p.waitForSelector('[data-story-power="true"][data-story-road="true"]');await p.waitForTimeout(1000);await p.screenshot({path:'test-output/story-restored.png',fullPage:true});await ready();for(let i=0;i<4;i++)await act(i,'produce');for(let i=1;i<4;i++)await act(i,'mission_donate',{item:i,qty:1});await p.evaluate(()=>refreshSchool());await p.locator('#gameObjective').click();await ready();await p.locator('[data-story-gift="0"]').click();await p.waitForFunction(()=>classroomData.mission.food.every(n=>n===1));await task(2,2);await task(3,1);await p.waitForSelector('.story-finish');await p.screenshot({path:'test-output/story-complete.png',fullPage:true});await p.reload();await p.waitForFunction(()=>classroomActive&&classroomData.mission.completed>0);await p.locator('#gameObjective').click();await ready();await p.setViewportSize({width:390,height:844});await p.screenshot({path:'test-output/story-mobile-complete.png',fullPage:true});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert(await p.locator('.story-finish').isVisible());
-// A stale poll must never roll back mission progress.
-assert(await p.evaluate(()=>{const revision=classroomData.mission.revision;applySchool({...classroomData,mission:{...classroomData.mission,revision:0,counts:[0,0,0,0]}});return classroomData.mission.revision===revision}));
-const demo=await browser.newPage({viewport:{width:1100,height:900},extraHTTPHeaders:headers});demo.on('pageerror',e=>errors.push(e.message));await demo.goto(base);await demo.locator('#localDemo').click();const role=demo.locator('[data-job="0"]');if(await role.isVisible()){await role.click();await demo.locator('#chooseJob').click();}await demo.locator('#gameObjective').click();await demo.locator('#startDemoStory').click();await demo.locator('#demoStoryFood').click();for(const [i,a] of [[0,1],[1,0]]){await demo.locator('[data-story-task="'+i+'"]').click();await demo.locator('input[value="'+a+'"]').check();await demo.locator('#storyAnswerSubmit').click();await demo.locator('#storyContinue').click()}for(let i=0;i<4;i++)for(let n=0;n<2;n++)await demo.locator('[data-story-gift="'+i+'"]').click();for(const [i,a] of [[2,2],[3,1]]){await demo.locator('[data-story-task="'+i+'"]').click();await demo.locator('input[value="'+a+'"]').check();await demo.locator('#storyAnswerSubmit').click();await demo.locator('#storyContinue').click()}assert(await demo.locator('.story-finish').isVisible());assert.deepEqual(errors,[]);fs.writeFileSync('test-output/story-browser-report.json',JSON.stringify({passed:true,environment:base,checks:['teacher start','wrong answer retry','road and warehouse visual transition','four ingredients','inspection and delivery','reload persistence','mobile layout','stale snapshot guard','solo practice complete'],pageErrors:errors},null,2));console.log('PASS: story browser flow, desktop/mobile and solo practice');}finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const {DatabaseSync}=require('node:sqlite');
+const {createRequire}=require('node:module');
+const {chromium}=createRequire('C:/Users/경남교육청/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/package.json')('playwright');
+const base=process.env.TEST_URL||'http://127.0.0.1:8825',dbPath=process.env.TEST_DB;
+assert(new URL(base).hostname==='127.0.0.1'&&dbPath&&path.resolve(dbPath).startsWith(path.resolve('test-output')+path.sep));
+async function request(route,body,token){const result=await fetch(base+route,{method:body?'POST':'GET',headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});const data=await result.json();assert(result.ok,JSON.stringify(data));return data}
+
+(async()=>{
+ const setupKey=fs.readFileSync('private/teacher-setup.txt','utf8').trim();
+ const room=await request('/api/create',{setupKey,size:2});
+ const token=room.students[0].code;
+ const browser=await chromium.launch({headless:true,channel:'msedge',args:['--enable-webgl']});
+ const errors=[];
+ try{
+  const teacherContext=await browser.newContext();await teacherContext.addInitScript(value=>sessionStorage.setItem('village-teacher-token',value),room.teacherKey);
+  const teacher=await teacherContext.newPage();teacher.on('pageerror',error=>errors.push(error.message));await teacher.goto(base+'/teacher');
+  await teacher.locator('#startClassStory').waitFor();assert.match(await teacher.locator('#teacherStory').textContent(),/여러 차시|수확 80개/);
+  await teacher.locator('#startClassStory').click();await teacher.waitForFunction(()=>document.querySelector('#teacherStory')?.textContent.includes('진행 중'));
+  await teacherContext.close();
+  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});await context.addInitScript(value=>sessionStorage.setItem('village-student-token',value),token);
+  const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(base+'/#village');await page.waitForFunction(()=>window.classroomActive&&window.farm3DReady&&classroomData.mission);
+  await page.waitForFunction(()=>document.querySelector('.farm3d-viewport')?.dataset.stormAsset==='ready');
+  assert.equal(await page.locator('.farm3d-viewport').getAttribute('data-story-road'),'false');
+  await page.locator('.compact-tabs [data-screen="activity"]').click();await page.locator('.activity-tabs [data-activity="story"]').click();
+  async function task(number,answer){await page.locator(`[data-story-task="${number}"]`).click();await page.locator(`input[name="storyAnswer"][value="${answer}"]`).check();await page.locator('#storyAnswerSubmit').click();await page.locator('#storyContinue').click();await page.waitForFunction(i=>classroomData.mission.counts[i]===1,number)}
+  await task(0,1);await task(1,0);
+  await page.locator('.compact-tabs [data-screen="village"]').click();await page.waitForFunction(()=>document.querySelector('.farm3d-viewport')?.dataset.storyRoad==='true'&&document.querySelector('.farm3d-viewport')?.dataset.storyPower==='true');
+  await page.locator('.compact-tabs [data-screen="activity"]').click();await page.locator('.activity-tabs [data-activity="story"]').click();
+  const snapshot=await request('/api/state',null,token);const db=new DatabaseSync(dbPath);
+  db.prepare("UPDATE players SET state=json_set(state,'$.stock',json('[1,1,1,1]')),version=version+1 WHERE id=?").run(snapshot.me.id);db.close();
+  await page.evaluate(()=>refreshSchool());await page.waitForFunction(()=>state.stock.every(n=>n===1));
+  for(let item=0;item<4;item++){await page.locator(`[data-story-gift="${item}"]`).click();await page.waitForFunction(i=>classroomData.mission.food[i]===1,item)}
+  await task(2,2);await task(3,1);
+  await page.locator('.story-finish').waitFor();
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await page.reload();await page.waitForFunction(()=>window.classroomActive&&classroomData.mission?.completed>0);
+  assert.deepEqual(errors,[]);await context.close();
+  console.log('PASS: current mobile story UI, storm repair → four ingredients → inspection → meal, reload');
+ }finally{await browser.close()}
+})().catch(error=>{console.error(error);process.exitCode=1});

@@ -1,5 +1,6 @@
-import assert from 'node:assert/strict';import {readFile,writeFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';import {readFile,writeFile} from 'node:fs/promises';import {DatabaseSync} from 'node:sqlite';import path from 'node:path';
 const base=process.env.TEST_URL||'http://127.0.0.1:8787',key=(await readFile('private/teacher-setup.txt','utf8')).trim();
+assert(new URL(base).hostname==='127.0.0.1'&&process.env.TEST_DB&&path.resolve(process.env.TEST_DB).startsWith(path.resolve('test-output')+path.sep),'Use an isolated local test database');
 async function req(path,body,token){const r=await fetch(base+path,{method:body?'POST':'GET',headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{}),...(process.env.SITES_AUTH?{'OAI-Sites-Authorization':'Bearer '+process.env.SITES_AUTH}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()}}
 let seq=0;const act=(s,action,extra={},id)=>req('/api/action',{action,...extra,requestId:id||'story-test-'+(++seq)},s.code);const ok=r=>{assert.equal(r.status,200,JSON.stringify(r));return r.data};
 const made=await req('/api/create',{setupKey:key,size:16});assert.equal(made.status,201,JSON.stringify(made));const room=made.data,ss=room.students;
@@ -13,12 +14,16 @@ const repeats=await Promise.all(Array.from({length:6},()=>act(ss[0],'mission_tas
 ok(await act(ss[1],'mission_task',{item:0,answer:1}));ok(await act(ss[2],'mission_task',{item:1,answer:0}));d=ok(await act(ss[3],'mission_task',{item:1,answer:0}));assert.equal(d.room.weather,4);assert.equal(d.room.market,true);
 const settings={day:1,weather:4,market:true,phase:'협력',paused:true};ok(await req('/api/teacher',settings,room.teacherKey));assert.equal((await act(ss[0],'mission_task',{item:1,answer:0})).status,423);ok(await req('/api/teacher',{...settings,paused:false},room.teacherKey));
 for(let i=0;i<8;i++)ok(await act(ss[i],'produce'));
+// Mission concurrency is tested with stocked ingredients. The separate
+// role-specialization test verifies how students actually produce them.
+const fixturePlayers=(await Promise.all(ss.slice(0,8).map(student=>req('/api/state',null,student.code)))).map(result=>result.data.me.id);
+const fixture=new DatabaseSync(process.env.TEST_DB);fixture.exec('BEGIN IMMEDIATE');try{for(const [index,item]of [[1,1],[2,2],[3,3],[5,1],[6,2],[7,3]])fixture.prepare("UPDATE players SET state=json_set(state,?,2) WHERE id=?").run(`$.stock[${item}]`,fixturePlayers[index]);fixture.exec('COMMIT')}catch(error){fixture.exec('ROLLBACK');throw error}finally{fixture.close()}
 for(let i=0;i<4;i++)ok(await act(ss[i],'mission_donate',{item:i,qty:2}));
 // Two different holders compete for the final unit of the same ingredient.
 ok(await act(ss[8],'produce'));const race=await Promise.all([act(ss[4],'mission_donate',{item:0,qty:1}),act(ss[8],'mission_donate',{item:0,qty:1})]);assert.equal(race.filter(r=>r.status===200).length,1,JSON.stringify(race));assert.equal(race.filter(r=>r.status===409).length,1);
 for(let i=1;i<4;i++)ok(await act(ss[i+4],'mission_donate',{item:i,qty:1}));
 assert.equal((await act(ss[0],'mission_task',{item:3,answer:1})).status,409);ok(await act(ss[0],'mission_task',{item:2,answer:2}));assert.equal((await act(ss[0],'mission_task',{item:3,answer:1})).status,409);ok(await act(ss[1],'mission_task',{item:2,answer:2}));d=ok(await act(ss[0],'mission_task',{item:3,answer:1}));assert.equal(d.mission.completed,0);d=ok(await act(ss[1],'mission_task',{item:3,answer:1}));assert(d.mission.completed>0);assert.deepEqual(d.mission.food,[3,3,3,3]);assert.deepEqual(d.mission.counts,[2,2,2,2]);assert.equal(d.mission.revision,20);
-const fresh=ok(await req('/api/state',null,room.teacherKey));assert.equal(fresh.mission.completed,d.mission.completed);assert.equal(fresh.players.reduce((n,p)=>n+p.stock.reduce((a,b)=>a+b,0),0),6);assert.equal(fresh.players.reduce((n,p)=>n+p.coins,0),16*80+80);
+const fresh=ok(await req('/api/state',null,room.teacherKey));assert.equal(fresh.mission.completed,d.mission.completed);assert.equal(fresh.players.reduce((n,p)=>n+p.stock.reduce((a,b)=>a+b,0),0),18);assert.equal(fresh.players.reduce((n,p)=>n+p.coins,0),16*80+80);
 const other=await req('/api/create',{setupKey:key,size:1});assert.equal((await act(other.data.students[0],'mission_task',{item:0,answer:1})).status,409);
 await writeFile('test-output/story-api-report.json',JSON.stringify({passed:true,environment:base,checks:['teacher start and goals','wrong answer and locked stages','idempotent reward','distinct participants quorum','pause','concurrent last donation','stock conservation','completion and persistence','class isolation'],revision:d.mission.revision},null,2));console.log('PASS: story API, 10 checks; stock and rewards conserved');
 
