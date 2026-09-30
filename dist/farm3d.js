@@ -5,6 +5,7 @@ import {createCropModels} from './crop-models.js';
 import {createStudentAvatar} from './student-avatar.js';
 import {createLandRanch} from './land-ranch.js';
 import {createMarketKit} from './market-kit.js';
+import {createWatersideKit} from './waterside-kit.js';
 import {createPlaza} from './plaza.js';
 import {createVillageWalk} from './village-walk.js?v=33';
 
@@ -129,6 +130,7 @@ const districts=[{x:-21,z:-17,job:1,title:'목장 마을'},{x:21,z:-17,job:2,tit
 const districtLabels=[];
 function villageLabel(title,pos,fn){const b=document.createElement('button');b.className='district3d';b.textContent=title;b.onclick=fn;viewport.querySelector('.farm3d-labels').append(b);districtLabels.push({b,pos,title});return b}
 for(const d of districts){const g=new THREE.Group();g.position.set(d.x,0,d.z);villageRoot.add(g);box(13,.05,12,0xa5c583,g,0,.015,0);box(1,.04,10,0xe3d0a3,g,0,.12,0);for(let k=0;k<6;k++){const x=(k%2?1:-1)*3.1,z=Math.floor(k/2)*3.2-3.2;box(1.8,1.1,1.5,[0xf5ddb7,0xe1d7ba,0xf2d4ae][k%3],g,x,.65,z);const roof=mesh(new THREE.ConeGeometry(1.5,.75,4),[0xb46c4c,0x738e64,0x9c7864][k%3],g,x,1.55,z);roof.rotation.y=Math.PI/4;if(d.job===1){const cow=ball(.42,0xf8efe0,g,x+1,.5,z+1,1.3,.7,.65);ball(.2,0x555746,cow,.3,.15,.1)}if(d.job===2){cyl(.1,.15,1,0x9a714a,g,x+1,.6,z+1);ball(.6,0x5b9b42,g,x+1,1.5,z+1);ball(.12,0xdd8052,g,x+1.4,1.4,z+1.2)}if(d.job===3)box(1.4,.04,1.1,0x70c6d7,g,x+1,.15,z+1)}villageLabel(d.title,new THREE.Vector3(d.x,2.5,d.z),()=>showDistrict(d.job,d.title))}
+const oldWaterDistrict=villageRoot.children.find(child=>child.position.x===0&&child.position.z===-38);
 box(11,.18,10,0xe4cc9d,villageRoot,0,.05,-19);const oldMarketStalls=new THREE.Group();villageRoot.add(oldMarketStalls);for(let i=0;i<4;i++){const x=(i%2?1:-1)*3.1,z=-19+(i<2?-2.5:2.5);box(2,.7,1,0xb38950,oldMarketStalls,x,.5,z);for(const dx of [-.8,.8])box(.08,1.6,.08,0xa48050,oldMarketStalls,x+dx,.95,z);box(2.3,.16,1.5,[0xde9270,0xf0ca6c,0x7bb2a0,0x82a6c2][i],oldMarketStalls,x,1.8,z)}
 createMarketKit({villageRoot,viewport,fallback:oldMarketStalls});
 box(2.6,.08,43,0xe4cc9d,villageRoot,0,.1,-16);box(48,.08,2.6,0xe4cc9d,villageRoot,0,.1,-17);box(48,.07,1.8,0xe4cc9d,villageRoot,0,.09,-29);box(1.8,.07,20,0xe4cc9d,villageRoot,-14,.09,-19);box(1.8,.07,20,0xe4cc9d,villageRoot,14,.09,-19);
@@ -141,7 +143,8 @@ const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.14,.22,1.3,5),m
 const crowns=new THREE.InstancedMesh(new THREE.ConeGeometry(.9,2.4,6),mat(0x4e8850),56);
 const dummy=new THREE.Object3D();for(let i=0;i<56;i++){let x,z;if(i<20){x=-29+i*3;z=-47+Math.sin(i)*.7}else if(i<40){x=-29+(i-20)*3;z=12+Math.sin(i)*.8}else{x=i%2?-30:30;z=-42+Math.floor((i-40)/2)*7}dummy.position.set(x,.65,z);dummy.scale.setScalar(.8+(i%4)*.12);dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);dummy.position.y=2;dummy.updateMatrix();crowns.setMatrixAt(i,dummy.matrix)}scenery.add(trunks,crowns);
 // Shared meadow and small pond sit alongside the paths, without separate floating bases.
-box(11,.05,8,0x82ad61,scenery,-20,.04,-34);box(10,.06,7,0xc9d099,scenery,19,.04,-37);box(8.8,.08,5.8,0x6ebbc0,scenery,19,.085,-37);box(4,.12,1.1,0xbb905a,scenery,14,.19,-35);
+box(11,.05,8,0x82ad61,scenery,-20,.04,-34);const oldPond=new THREE.Group();scenery.add(oldPond);box(10,.06,7,0xc9d099,oldPond,19,.04,-37);box(8.8,.08,5.8,0x6ebbc0,oldPond,19,.085,-37);box(4,.12,1.1,0xbb905a,oldPond,14,.19,-35);
+createWatersideKit({villageRoot,viewport,fallback:[oldPond,oldWaterDistrict],onReady:()=>{const label=districtLabels.find(entry=>entry.title==='물가 마을');if(label)label.pos.set(0,2.5,-42)}});
 for(let i=0;i<5;i++){box(7,.045,.2,0xd5b785,scenery,-20,.12,-36+i);box(.1,.8,.1,0xe5d3a1,scenery,-24+i*2,.4,-38)}
 
 for(const x of [-9,9])for(const z of [-11,-25]){cyl(.08,.12,2,0x826440,scenery,x,1,z);ball(.25,0xffe9ac,scenery,x,2.1,z);box(1.4,.18,.42,0xbc9060,scenery,x+1,.4,z)}
