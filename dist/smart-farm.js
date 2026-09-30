@@ -20,7 +20,7 @@ export function createSmartFarm({land,viewport,selectedInfo,getPlot,getSelected,
  const panel=document.createElement('section');panel.className='smart-farm-panel';panel.hidden=true;panel.setAttribute('aria-label','스마트 농장 탐구');panel.innerHTML='<button type="button" class="smart-farm-close" aria-label="스마트 농장 닫기">×</button><b>🤖 스마트 농장</b><p class="smart-farm-reading"></p><div class="smart-farm-choices"><button type="button" class="smart-farm-measure">선택한 밭 수분 확인</button><button type="button" class="smart-farm-water">로봇에게 물 주기</button></div><small>수분 수치는 농사 단계를 바탕으로 만든 교육용 추정치예요.</small>';viewport.append(panel);
  const reading=panel.querySelector('.smart-farm-reading'),water=panel.querySelector('.smart-farm-water');let measured=-1;
  function refresh(){const i=getSelected(),p=i===null?null:getPlot(i);if(!p){reading.textContent='먼저 밭을 선택하세요. 센서가 흙 상태를 살펴봐요.';water.hidden=true;return}const stage=p.wateredAt?2:p.seeded?1:0;reading.textContent=measured===i?`${i+1}번 밭 · ${stage===0?'씨앗을 심으면 측정할 수 있어요.':stage===1?'건조 24% · 물이 필요해요.':'적정 72% · 지금은 물이 충분해요.'}`:`${i+1}번 밭을 선택했어요. 수분 확인을 눌러 보세요.`;water.hidden=stage!==1;water.disabled=measured!==i||!!viewport.querySelector('.selected-bed-action')?.disabled;}
- function open(){panel.hidden=false;measured=-1;refresh();}
+ function open(){document.querySelector('.farm-goal-popover')?.setAttribute('hidden','');document.querySelector('[data-hud-goal]')?.setAttribute('aria-expanded','false');panel.hidden=false;measured=-1;refresh();}
  label.onclick=()=>{if(panel.hidden)open();else panel.hidden=true};
  bedButton.onclick=open;
  panel.querySelector('.smart-farm-close').onclick=()=>{panel.hidden=true};
