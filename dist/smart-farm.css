@@ -1,0 +1,9 @@
+.smart-farm-label{position:absolute;z-index:5;top:54px;left:8px;padding:6px 10px;border:1px solid #9ab8a0;border-radius:16px;background:#fffdf0eb;color:#285347;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 2px 8px #173b3529}
+.smart-farm-label[hidden],.smart-farm-panel[hidden]{display:none}
+.smart-farm-panel{position:absolute;z-index:9;top:52px;right:8px;width:min(290px,calc(100% - 16px));box-sizing:border-box;padding:14px;background:#fffdf4f5;border:2px solid #5c947c;border-radius:15px;box-shadow:0 5px 18px #24403848;color:#25483e;font-size:13px}
+.smart-farm-panel>b{font-size:16px}.smart-farm-panel>p{margin:10px 0;line-height:1.45}.smart-farm-panel small{display:block;margin-top:9px;line-height:1.4;color:#496055}
+.smart-farm-choices{display:flex;gap:6px;flex-wrap:wrap}.smart-farm-choices button{min-height:38px;padding:6px 9px;font-size:12px;border-radius:9px}.smart-farm-water{background:#2e695a;color:white}.smart-farm-water[hidden]{display:none}.smart-farm-water:disabled{opacity:.55}
+.smart-farm-close{position:absolute;right:6px;top:4px;padding:3px 7px;background:transparent;font-size:22px;line-height:1}
+.compact-shell .farm3d-viewport .selected-bed-info>.selected-bed-action{grid-column:1;grid-row:4}
+.compact-shell .farm3d-viewport .selected-bed-info>.smart-farm-bed-button{grid-column:2;grid-row:4;min-height:40px;padding:4px;font-size:18px;border:1px solid #8eb59c;border-radius:9px;background:#e9f4e6}
+@media(max-width:600px){.smart-farm-panel{left:8px;right:8px;width:auto}.smart-farm-label{font-size:10px;padding:4px 7px}}
