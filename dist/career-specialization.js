@@ -31,7 +31,7 @@ renderPanel=function(){
   const heading=$('#panel .story-subhead');
   if(heading){
    const guide=document.createElement('details');guide.className='field-hint';
-   guide.innerHTML='<summary>급식 재료는 어디서 얻나요?</summary><p>상추는 내 밭에서 수확해요. 사과는 누적 수확 16개 뒤 과수 역할을 고른 친구가 만들어요. 우유는 누적 수확 80개 뒤 젖소를 입양하고 돌보면 얻어요. 생선은 우리 마을 물가에서 수질을 확인하고 돌본 뒤 수확해요. 장터에서 친구와 교환할 수도 있어요.</p>';
+   guide.innerHTML='<summary>급식 재료는 어디서 얻나요?</summary><p>상추는 내 밭에서 수확해요. 사과는 누적 수확 16개 뒤 과수 역할을 고른 친구가 만들어요. 우유는 누적 수확 80개 뒤 젖소를 입양하고 돌보면 얻어요. 생선은 우리 마을 물가에서 돌본 뒤 수확해요. 활동의 직업 활동에서 냉장 배송을 마친 뒤 장터에서 교환하거나 급식에 보탤 수 있어요.</p>';
    heading.after(guide);
   }
   return;

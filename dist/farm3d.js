@@ -148,7 +148,7 @@ const dummy=new THREE.Object3D();for(let i=0;i<56;i++){let x,z;if(i<20){x=-29+i*
 // Shared meadow and small pond sit alongside the paths, without separate floating bases.
 box(11,.05,8,0x82ad61,scenery,-20,.04,-34);const oldPond=new THREE.Group();scenery.add(oldPond);box(10,.06,7,0xc9d099,oldPond,19,.04,-37);box(8.8,.08,5.8,0x6ebbc0,oldPond,19,.085,-37);box(4,.12,1.1,0xbb905a,oldPond,14,.19,-35);
 createWatersideKit({villageRoot,viewport,fallback:[oldPond,oldWaterDistrict],onReady:()=>{const label=districtLabels.find(entry=>entry.title==='물가 마을');if(label)label.pos.set(0,2.5,-42)}});
-const coldChainKit=createColdChainKit({villageRoot,viewport});
+const coldChainKit=createColdChainKit({villageRoot,viewport,getState:()=>state});
 const stormKit=createStormKit({villageRoot,viewport});
 villageLabel('물가 집하장',new THREE.Vector3(9,2.8,-33.65),()=>modal(`<h2>생선이 장터에 가는 길</h2><p>물가에서 수확한 생선을 이곳에서 보냉상자에 담아요. 배송차가 마을 길을 따라 장터까지 옮겨요.</p><p>양식업자, 창고 관리자, 배송기사, 전력 기술자의 일이 이어집니다.</p><p>내 보관함의 생선: ${state.stock[3]||0}개 · 실제 교환은 장터에서 해요.</p><button class="quiet wide" data-close>마을 지도로 돌아가기</button>`));
 for(let i=0;i<5;i++){box(7,.045,.2,0xd5b785,scenery,-20,.12,-36+i);box(.1,.8,.1,0xe5d3a1,scenery,-24+i*2,.4,-38)}

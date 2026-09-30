@@ -52,6 +52,11 @@ try{
  assert.equal((await action(fisher,{action:'produce'})).status,400,'fish requires water quality and care');
  ok(await action(fisher,{action:'water_sample'}));ok(await action(fisher,{action:'water_care'}));
  now+=21000;ok(await action(fisher,{action:'water_harvest'}));
+ const packed=ok(await action(fisher,{action:'shipment_pack',item:3,qty:1}));
+ const shipmentId=packed.me.state.logistics.shipment.id;
+ ok(await action(fisher,{action:'shipment_check',shipmentId}));
+ ok(await action(fisher,{action:'shipment_dispatch',shipmentId}));
+ ok(await action(fisher,{action:'shipment_arrive',shipmentId}));
  const meal=ok(await action(fisher,{action:'mission_donate',item:3,qty:1}));
  assert.deepEqual(meal.mission.food,[1,1,1,1]);
  ok(await action(student,{action:'mission_task',item:2,answer:2}));

@@ -28,7 +28,7 @@ if(new URL(base).hostname!=='127.0.0.1')throw Error('Use an isolated local serve
   const vanBefore=await page.evaluate(()=>window.coldChainScene.getObjectByName('refrigerated-van').position.x);
   await page.waitForTimeout(1200);
   const vanAfter=await page.evaluate(()=>window.coldChainScene.getObjectByName('refrigerated-van').position.x);
-  assert.notEqual(vanBefore,vanAfter,'delivery van should move along the route');
+  assert.equal(vanBefore,vanAfter,'delivery van stays parked without a shipment');
   const label=page.locator('.district3d').filter({hasText:'물가 집하장'});
   assert.equal(await label.isVisible(),true);
   await page.locator('.farm3d-viewport').screenshot({path:`test-output/cold-chain/village-${width}.png`});
