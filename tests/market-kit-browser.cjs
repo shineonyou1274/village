@@ -1,0 +1,43 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const crypto=require('node:crypto');
+const {createRequire}=require('node:module');
+const {chromium}=createRequire('C:/Users/경남교육청/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/package.json')('playwright');
+const base=process.env.TEST_URL||'http://127.0.0.1:8816';
+(async()=>{
+ fs.mkdirSync('test-output/market-kit',{recursive:true});
+ const browser=await chromium.launch({headless:true,channel:'msedge',args:['--enable-webgl']});
+ try{for(const width of [1360,390]){
+  const response=await fetch(base+'/api/trial',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({key:crypto.randomBytes(16).toString('hex')})});
+  assert(response.ok);const {token}=await response.json();
+  const context=await browser.newContext({viewport:{width,height:900},hasTouch:width===390});
+  await context.addInitScript(t=>sessionStorage.setItem('village-student-token',t),token);
+  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.goto(base+'/#farm');
+  await page.waitForFunction(()=>window.classroomActive&&document.querySelector('.farm3d-viewport')?.dataset.marketAsset==='ready');
+  await page.locator('[data-bed3d="0"]').click();await page.locator('.selected-bed-action').click();
+  await page.waitForFunction(()=>state.farm.plots[0].seeded&&!window.classroomSaving);
+  await page.waitForFunction(()=>!document.querySelector('.selected-bed-action').disabled);
+  await page.locator('.selected-bed-action').click();
+  await page.waitForFunction(()=>document.querySelector('.selected-bed-action').textContent==='수확하기'&&!document.querySelector('.selected-bed-action').disabled,null,{timeout:30000});
+  await page.locator('.selected-bed-action').click();await page.waitForFunction(()=>state.stock[0]>=2&&!window.classroomSaving);
+  const notice=page.locator('.first-harvest-notice button');if(await notice.isVisible())await notice.click();
+  await page.locator('.compact-tabs [data-screen=village]').click();
+  await page.locator('.plaza-name.is-me').waitFor();
+  assert.equal(await page.locator('.plaza-name').count(),2,'trial guide and student should share the square');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await page.locator('.farm3d-viewport').screenshot({path:`test-output/market-kit/village-${width}.png`});
+  await page.locator('[data-plaza-market]').click();await page.waitForURL('**/#market',{timeout:15000});
+  await page.locator('#marketSquare').waitFor();
+  assert(await page.locator('.market-stall[data-market-peer]').count()>0);
+  await page.locator('.market-stall[data-market-peer]').first().click();
+  await page.locator('[data-market-trade]').first().click();
+  const before=await page.evaluate(()=>[...state.stock]);
+  await page.locator('#confirmSchoolTrade').click();
+  await page.waitForFunction(()=>!document.querySelector('#dialog').open);
+  const after=await page.evaluate(()=>[...state.stock]);
+  assert.equal(after[0],before[0]-1);assert.equal(after.slice(1).reduce((a,b)=>a+b,0),before.slice(1).reduce((a,b)=>a+b,0)+1);
+  assert.deepEqual(errors,[]);await context.close();
+  console.log(`PASS ${width}px: five GLBs, two avatars, walk to market, accept trade`);
+ }}finally{await browser.close()}
+})().catch(error=>{console.error(error);process.exitCode=1});

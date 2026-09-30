@@ -4,6 +4,7 @@ import {createSmartFarm} from './smart-farm.js';
 import {createCropModels} from './crop-models.js';
 import {createStudentAvatar} from './student-avatar.js';
 import {createLandRanch} from './land-ranch.js';
+import {createMarketKit} from './market-kit.js';
 import {createPlaza} from './plaza.js';
 import {createVillageWalk} from './village-walk.js?v=33';
 
@@ -128,7 +129,8 @@ const districts=[{x:-21,z:-17,job:1,title:'목장 마을'},{x:21,z:-17,job:2,tit
 const districtLabels=[];
 function villageLabel(title,pos,fn){const b=document.createElement('button');b.className='district3d';b.textContent=title;b.onclick=fn;viewport.querySelector('.farm3d-labels').append(b);districtLabels.push({b,pos,title});return b}
 for(const d of districts){const g=new THREE.Group();g.position.set(d.x,0,d.z);villageRoot.add(g);box(13,.05,12,0xa5c583,g,0,.015,0);box(1,.04,10,0xe3d0a3,g,0,.12,0);for(let k=0;k<6;k++){const x=(k%2?1:-1)*3.1,z=Math.floor(k/2)*3.2-3.2;box(1.8,1.1,1.5,[0xf5ddb7,0xe1d7ba,0xf2d4ae][k%3],g,x,.65,z);const roof=mesh(new THREE.ConeGeometry(1.5,.75,4),[0xb46c4c,0x738e64,0x9c7864][k%3],g,x,1.55,z);roof.rotation.y=Math.PI/4;if(d.job===1){const cow=ball(.42,0xf8efe0,g,x+1,.5,z+1,1.3,.7,.65);ball(.2,0x555746,cow,.3,.15,.1)}if(d.job===2){cyl(.1,.15,1,0x9a714a,g,x+1,.6,z+1);ball(.6,0x5b9b42,g,x+1,1.5,z+1);ball(.12,0xdd8052,g,x+1.4,1.4,z+1.2)}if(d.job===3)box(1.4,.04,1.1,0x70c6d7,g,x+1,.15,z+1)}villageLabel(d.title,new THREE.Vector3(d.x,2.5,d.z),()=>showDistrict(d.job,d.title))}
-box(11,.18,10,0xe4cc9d,villageRoot,0,.05,-19);for(let i=0;i<4;i++){const x=(i%2?1:-1)*3.1,z=-19+(i<2?-2.5:2.5);box(2,.7,1,0xb38950,villageRoot,x,.5,z);for(const dx of [-.8,.8])box(.08,1.6,.08,0xa48050,villageRoot,x+dx,.95,z);box(2.3,.16,1.5,[0xde9270,0xf0ca6c,0x7bb2a0,0x82a6c2][i],villageRoot,x,1.8,z)}
+box(11,.18,10,0xe4cc9d,villageRoot,0,.05,-19);const oldMarketStalls=new THREE.Group();villageRoot.add(oldMarketStalls);for(let i=0;i<4;i++){const x=(i%2?1:-1)*3.1,z=-19+(i<2?-2.5:2.5);box(2,.7,1,0xb38950,oldMarketStalls,x,.5,z);for(const dx of [-.8,.8])box(.08,1.6,.08,0xa48050,oldMarketStalls,x+dx,.95,z);box(2.3,.16,1.5,[0xde9270,0xf0ca6c,0x7bb2a0,0x82a6c2][i],oldMarketStalls,x,1.8,z)}
+createMarketKit({villageRoot,viewport,fallback:oldMarketStalls});
 box(2.6,.08,43,0xe4cc9d,villageRoot,0,.1,-16);box(48,.08,2.6,0xe4cc9d,villageRoot,0,.1,-17);box(48,.07,1.8,0xe4cc9d,villageRoot,0,.09,-29);box(1.8,.07,20,0xe4cc9d,villageRoot,-14,.09,-19);box(1.8,.07,20,0xe4cc9d,villageRoot,14,.09,-19);
 const marketBounds=new THREE.Box3(new THREE.Vector3(-5.5,0,-24),new THREE.Vector3(5.5,2,-14));
 function enterMarket(){state.place='market';if(window.villageNavigate)window.villageNavigate('market');else{tab='market';render()}}
