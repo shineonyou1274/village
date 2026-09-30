@@ -6,14 +6,14 @@ import {GLTFLoader} from './vendor/GLTFLoader.js';
 export function createLandRanch({land,viewport,getState,isFarm,onExpand,onCowAction,onRanchView}){
  const loader=new GLTFLoader(),assets=new Map(),root=new THREE.Group();land.add(root);
  const load=(folder,name)=>new Promise(resolve=>loader.load(`./assets/${folder}/${name}.glb`,g=>{assets.set(name,g);resolve(g)},undefined,()=>resolve(null)));
- let plotCount=-1,landReady=false,cowModel=null,cowMixer=null,cowActions={},cowClip='',lastCare='';
+ let plotCount=-1,landReady=false,cowModel=null,cowMixer=null,cowActions={},cowClip='',lastCare='',careMotion='',careMotionUntil=0;
  const road=new THREE.Group(),fence=new THREE.Group(),ranch=new THREE.Group();root.add(road,fence,ranch);
  const barnSpot=new THREE.Vector3(9.2,0,-4),cowSpot=new THREE.Vector3(9.2,0,1.5);
  const marker=document.createElement('button');marker.type='button';marker.className='land-expansion-marker';marker.onpointerdown=e=>{e.preventDefault();e.stopPropagation();onExpand()};marker.onclick=e=>{e.stopPropagation();if(e.detail===0)onExpand()};viewport.append(marker);
  const ranchButton=document.createElement('button');ranchButton.type='button';ranchButton.className='ranch-marker';ranchButton.textContent='🐄 목장';const toggleRanch=()=>{panel.hidden=!panel.hidden;onRanchView(!panel.hidden);if(!panel.hidden)updateCare()};ranchButton.onpointerdown=e=>{e.preventDefault();e.stopPropagation();toggleRanch()};ranchButton.onclick=e=>{e.stopPropagation();if(e.detail===0)toggleRanch()};viewport.append(ranchButton);
  const panel=document.createElement('section');panel.className='ranch-panel';panel.hidden=true;panel.innerHTML='<button type="button" class="ranch-close" aria-label="목장 닫기">×</button><b>🐄 나의 목장</b><p class="ranch-status"></p><div class="ranch-actions"></div><small>먹이와 물을 챙긴 뒤 20초가 지나면 우유를 모을 수 있어요.</small>';viewport.append(panel);
  panel.querySelector('.ranch-close').onclick=()=>{panel.hidden=true;onRanchView(false)};
- panel.querySelector('.ranch-actions').onclick=async e=>{const b=e.target.closest('[data-cow]');if(!b||b.disabled)return;b.disabled=true;try{await onCowAction(b.dataset.cow)}finally{updateCare()}};
+ panel.querySelector('.ranch-actions').onclick=async e=>{const b=e.target.closest('[data-cow]');if(!b||b.disabled)return;const action=b.dataset.cow;b.disabled=true;try{if(await onCowAction(action)){careMotion=action==='cow_feed'?'eat':action==='cow_water'?'drink':'';careMotionUntil=Date.now()+2300}}finally{updateCare()}};
  function placed(name,parent,x,y,z){const asset=assets.get(name);if(!asset)return null;const model=asset.scene.clone(true);model.position.set(x,y,z);parent.add(model);return model}
  function buildLand(n){
   road.clear();fence.clear();const back=n<=6?3.3:n<=8?6.3:9.3;
@@ -38,7 +38,7 @@ export function createLandRanch({land,viewport,getState,isFarm,onExpand,onCowAct
  function playCow(name){if(cowClip===name||!cowActions[name])return;if(cowClip)cowActions[cowClip]?.stop();cowActions[name].reset().play();cowClip=name}
  function sync(){const s=getState(),n=s.farm?.plots?.length||6;if(landReady&&n!==plotCount)buildLand(n);updateCare();const cost=n===6?40:n===8?60:80;marker.textContent=n>=12?'':`＋ 다음 땅 · 밭 2칸 · ${cost}코인`;marker.hidden=!isFarm()||n>=12;ranchButton.hidden=!isFarm();if(!isFarm())panel.hidden=true;return landReady}
  function tick(dt){sync();const visible=isFarm();root.visible=visible;if(!visible)return;
-  if(cowMixer){const c=getState().cow,done=!!c&&c.milkDay>=getState().day;playCow(!c||done?'idle':c.fedAt&&!c.watered?'eat':c.watered&&!c.fedAt?'drink':'idle');cowMixer.update(dt)}
+  if(cowMixer){playCow(Date.now()<careMotionUntil?careMotion:'idle');cowMixer.update(dt);viewport.dataset.ranchMotion=cowClip}
   if(!panel.hidden&&getState().cow?.fedAt&&Date.now()-getState().cow.fedAt>=20000){lastCare='';updateCare()}
  }
  const landLoaded=Promise.all(['road-straight','fence-straight','fence-gate','empty-lot-sign'].map(name=>load('land',name)));

@@ -32,8 +32,8 @@ async function open(browser,token,width,plots=6){const context=await browser.new
   await page.locator('.ranch-marker').click();await page.locator('[data-cow="cow_adopt"]:visible').click();
   await page.waitForFunction(()=>!!state.cow&&document.querySelector('.farm3d-viewport').dataset.ranchCow==='adopted');
   await map.screenshot({path:'test-output/land-ranch/adopted-desktop.png'});
-  await page.locator('[data-cow="cow_feed"]:visible').click();await page.waitForFunction(()=>!!state.cow.fedAt&&!window.classroomSaving);
-  await page.locator('[data-cow="cow_water"]:visible').click();await page.waitForFunction(()=>state.cow.watered&&!window.classroomSaving);
+  await page.locator('[data-cow="cow_feed"]:visible').click();await page.waitForFunction(()=>!!state.cow.fedAt&&!window.classroomSaving&&document.querySelector('.farm3d-viewport').dataset.ranchMotion==='eat');
+  await page.locator('[data-cow="cow_water"]:visible').click();await page.waitForFunction(()=>state.cow.watered&&!window.classroomSaving&&document.querySelector('.farm3d-viewport').dataset.ranchMotion==='drink');
   await page.reload();await page.waitForFunction(()=>!!state.cow?.fedAt&&state.cow.watered&&document.querySelector('.farm3d-viewport')?.dataset.ranchAsset==='ready');
   const milkDb=new DatabaseSync(dbFile);milkDb.prepare("UPDATE players SET state=json_set(state,'$.cow.fedAt',?) WHERE id LIKE 'trial-%-0'").run(Date.now()-22000);milkDb.close();
   await page.evaluate(()=>refreshSchool());await page.waitForFunction(()=>Date.now()-state.cow.fedAt>=20000);
