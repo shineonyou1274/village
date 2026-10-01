@@ -1,0 +1,65 @@
+/* Keep controls within the scene and leave the page itself scrollable. */
+.compact-shell[data-screen=farm] .farm-top{display:none!important}
+.compact-shell[data-screen=farm] .farm3d-viewport.has-farm-hud{height:var(--play-height,420px)!important;min-height:320px!important}
+.compact-shell[data-screen=farm] .farm-bottom #expandFarm{display:none!important}
+.compact-shell[data-screen=farm] .district3d{display:none!important;pointer-events:none}
+.compact-shell:not([data-screen=farm]) .farm-seed-menu{display:none!important}
+.compact-shell #compactPrices{display:inline-flex!important;align-items:center;justify-content:center}
+.compact-shell[data-screen=farm] .farm-hud{top:8px;left:8px;right:8px}
+.compact-shell[data-screen=farm] .farm-hud>*{background:#fffdf1ee;border-color:#d7e6c9;box-shadow:none}
+.compact-shell[data-screen=farm] .smart-farm-label,
+.compact-shell[data-screen=farm] .land-expansion-marker,
+.compact-shell[data-screen=farm] .ranch-marker{top:55px;left:auto;right:auto;min-height:40px;max-width:none;padding:7px 10px;border:1px solid #386d59;border-radius:9px;background:#285c4ce8;color:white;font-size:12px;box-shadow:0 2px 6px #284d3b24;z-index:7}
+.compact-shell[data-screen=farm] .smart-farm-label{left:8px}
+.compact-shell[data-screen=farm] .land-expansion-marker{left:145px}
+.compact-shell[data-screen=farm] .ranch-marker{left:355px}
+.farm-seed-menu{position:absolute;z-index:8;top:103px;left:8px;width:max-content;max-width:calc(100% - 16px);color:#284d3d}
+.farm-seed-menu>summary{cursor:pointer;list-style:none;min-height:40px;box-sizing:border-box;padding:9px 12px;border:1px solid #9ab79a;border-radius:10px;background:#fffdf1ed;font-size:12px;font-weight:700;box-shadow:0 2px 7px #29473525}
+.farm-seed-menu>summary::-webkit-details-marker{display:none}
+.farm-seed-menu[open]{width:min(340px,calc(100% - 16px));background:#fffdf5f7;border:1px solid #9ab79a;border-radius:12px;box-shadow:0 6px 18px #29473540;overflow:auto;max-height:calc(100% - 110px)}
+.farm-seed-menu[open]>summary{box-shadow:none;border:0;border-bottom:1px solid #d1dfcd}
+.farm-seed-menu .seed-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:7px;margin:0!important;gap:5px}
+.farm-seed-menu .seed-picker button{min-height:46px!important;white-space:normal}
+.compact-shell[data-screen=farm] .map-tools-row{position:absolute;z-index:8;left:auto!important;right:10px!important;bottom:11px;display:flex;gap:6px;align-items:flex-end;justify-content:flex-end;width:auto!important;padding:0}
+.compact-shell[data-screen=farm] .map-view-settings{flex:0 0 auto;min-width:0}
+.compact-shell[data-screen=farm] .map-tools-row>button,
+.compact-shell[data-screen=farm] .map-tools-row>details>summary{display:flex;align-items:center;justify-content:center;min-height:42px;box-sizing:border-box;padding:8px 11px;border:1px solid #86a789;border-radius:10px;background:#fffdf1f0;color:#284d3d;font-size:12px;cursor:pointer}
+.compact-shell[data-screen=farm] .map-view-settings{position:relative}
+.compact-shell[data-screen=farm] .map-view-settings .farm3d-controls{position:absolute;right:0;bottom:48px;display:grid;grid-template-columns:repeat(2,max-content);padding:8px;border-radius:12px;background:#fffdf4f4;box-shadow:0 4px 16px #234a3440}
+.compact-shell[data-screen=farm] .map-view-settings:not([open]) .farm3d-controls{display:none}
+.compact-shell[data-screen=farm] .farm-current-status{right:220px;max-width:calc(100% - 230px)}
+.compact-shell[data-screen=village] .map-tools-row{display:none!important}
+.compact-shell[data-screen=village] .plaza-heading>button{margin-left:0}
+.compact-shell[data-screen=village] .plaza-actions{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:7px;padding-bottom:4px;align-items:center}
+.compact-shell[data-screen=village] .plaza-actions>*{flex:0 0 auto}
+.compact-shell[data-screen=village] .plaza-actions>details{width:auto}
+.compact-shell[data-screen=village] .plaza-actions details>summary{min-height:44px;box-sizing:border-box;border:1px solid #c6d8cc;border-radius:9px;background:white;cursor:pointer}
+.compact-shell[data-screen=village] .plaza-actions .farm3d-controls{position:static;display:flex;flex-wrap:wrap;padding:7px 0}
+.compact-shell[data-screen=village] .plaza-actions .map-view-settings:not([open]) .farm3d-controls{display:none}
+.plaza-name.is-practice{max-width:none;overflow:visible;text-overflow:clip}
+.compact-shell[data-screen=activity] .activity-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:920px;margin:8px auto 14px}
+.compact-shell[data-screen=activity] .activity-tabs button{display:grid;gap:8px;align-content:center;text-align:left;min-height:105px;padding:16px 18px;border:1px solid #d1dfd4;border-radius:15px;background:#fff;color:#284d3d;box-shadow:0 3px 9px #234a3410}
+.compact-shell[data-screen=activity] .activity-tabs button strong{font-size:18px}
+.compact-shell[data-screen=activity] .activity-tabs button span{font-size:12px;line-height:1.5}
+.compact-shell[data-screen=activity] .activity-tabs button.selected{border-color:#285c4c}
+.compact-shell .passport-pagination button{min-height:48px;min-width:88px;font-size:14px}
+.campus-shell .library3d-stage{max-width:none;margin:0 20px;height:470px}
+.campus-shell .library3d-top strong{font-size:17px}
+@media(max-width:700px){
+ .compact-shell .compact-topline{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:5px;padding:6px 12px}
+ .compact-shell .compact-topline #playMode{grid-column:1;grid-row:1;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .compact-shell .compact-topline #compactPrices{grid-column:2;grid-row:1;white-space:nowrap}
+ .compact-shell .compact-topline #compactMenuButton{grid-column:3;grid-row:1;white-space:nowrap}
+ .compact-shell .compact-topline #compactWeather{grid-column:1/-1;grid-row:2;min-width:0}
+ .compact-shell[data-screen=farm] .smart-farm-label,.compact-shell[data-screen=farm] .land-expansion-marker,.compact-shell[data-screen=farm] .ranch-marker{font-size:10px;padding:6px 7px;min-height:38px}
+ .compact-shell[data-screen=farm] .smart-farm-label{left:7px}
+ .compact-shell[data-screen=farm] .land-expansion-marker{left:106px;max-width:145px}
+ .compact-shell[data-screen=farm] .ranch-marker{left:auto;right:7px}
+ .farm-seed-menu{top:99px;left:7px}
+ .compact-shell[data-screen=farm] .farm-current-status{right:8px;bottom:61px;max-width:calc(100% - 16px)}
+ .compact-shell[data-screen=activity] .activity-tabs{gap:8px;padding:0 12px}
+ .compact-shell[data-screen=activity] .activity-tabs button{min-height:95px;padding:12px}
+ .compact-shell[data-screen=activity] .activity-tabs button strong{font-size:14px}
+ .compact-shell[data-screen=activity] .activity-tabs button span{font-size:10px}
+ .campus-shell .library3d-stage{margin:0 8px;height:390px}
+}
