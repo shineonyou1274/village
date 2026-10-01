@@ -11,6 +11,8 @@
 .compact-shell .farm-top h2{font-size:14px;margin:5px 0}.compact-shell .farm-top .farm-guide{font-size:11px}
 .campus-shell header{height:56px!important}.campus-shell header #identity{font-size:12px;color:#506d65}.campus-shell header>a{font-size:13px}
 .campus-shell>.compact-tabs{display:none}.campus-shell .compact-topline{padding:6px 20px;background:transparent}.campus-shell #compactWeather{font-size:13px;font-weight:700}.campus-shell #compactMenuButton{min-height:40px;background:#fff;border:1px solid #d7e1da}
+.compact-topline{position:relative;z-index:30}.compact-price-box{position:absolute;top:calc(100% - 2px);right:12px;width:min(480px,calc(100vw - 24px));max-width:none;box-sizing:border-box;margin:0;box-shadow:0 12px 32px #19332830;z-index:31}.compact-price-box table{border-collapse:collapse;width:100%;margin-top:9px;font-size:12px}.compact-price-box th,.compact-price-box td{padding:7px 5px;border-bottom:1px solid #e1e8e1;text-align:right;white-space:nowrap}.compact-price-box th:first-child{text-align:left}.compact-price-box thead th{color:#4d6658}.compact-price-box tbody th{font-weight:600}
+.campus-shell[data-screen=passport][data-passport-section=travel] #travelPage{display:block!important}
 .campus-shell .study-compact-tabs{display:flex;justify-content:flex-start;border-bottom:1px solid #d8e1d9;gap:20px;margin:0 0 14px;padding:0;max-width:none}
 .campus-shell .study-compact-tabs button{flex:0 1 auto!important;background:transparent;border-radius:0;min-height:44px;padding:10px 4px;font-size:13px;border-bottom:3px solid transparent}
 .campus-shell .study-compact-tabs button.selected{background:transparent!important;color:#285c4c!important;border-bottom-color:#285c4c;font-weight:700}

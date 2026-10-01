@@ -29,6 +29,6 @@
  };
  document.querySelector('#dailyQuizShortcut').onclick=openQuiz;
  if(!campus&&location.hash==='#quiz'){
-  const check=setInterval(()=>{if((document.querySelector('#dialog')?.open&&document.querySelector('#schoolEntry'))||(!window.classroomActive&&sessionStorage.getItem('village-student-token')))return;clearInterval(check);openQuiz();history.replaceState(null,'',location.pathname)},250);
+  const check=setInterval(()=>{if((document.querySelector('#dialog')?.open&&document.querySelector('#schoolEntry'))||(!window.classroomActive&&sessionStorage.getItem('village-student-token')))return;clearInterval(check);window.villageNavigate?.('activity',true);openQuiz()},250);
  }
 })();
