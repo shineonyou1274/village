@@ -34,7 +34,8 @@ if(schoolToken){window.classroomActive=false;schoolFetch('/api/state').then(data
 
 
 // Keep the walkthrough available after entry and refresh, without interrupting play.
-const trialGuide=document.createElement('details');trialGuide.className='trial-guide';trialGuide.hidden=true;trialGuide.open=localStorage.getItem('shiny-help-open')==='true';trialGuide.addEventListener('toggle',()=>localStorage.setItem('shiny-help-open',String(trialGuide.open)));
+const trialGuide=document.createElement('details');trialGuide.className='trial-guide';trialGuide.hidden=true;
+let trialGuideKey='';trialGuide.addEventListener('toggle',()=>{if(!trialGuide.open&&trialGuide.dataset.presented==='1'){if(trialGuideKey)localStorage.setItem(trialGuideKey,'seen');trialGuide.hidden=true;trialGuide.dataset.manual=''}});
 trialGuide.innerHTML='<summary>🌱 체험 마을 · 처음 시작하는 방법</summary><p>실제 학생이 아닌 <b>연습 친구</b>와 활동해요. 실제 학급 기록에는 반영되지 않아요.</p><ol><li><b>내 밭</b>에서 밭을 선택한 뒤 밭 위에 나타나는 심기·물 주기·수확 버튼을 눌러요.</li><li><b>장터</b>에서 연습 친구의 교환 제안을 수락해 보세요. 상추 1개로 우유나 사과를 받아요.</li><li><b>활동 → 공동 도시락</b>에서 수확물을 나누고, 메뉴의 <b>수입·기부 현황</b>에서 기록을 확인해요.</li><li>활동의 <b>진로 책장</b>에서 퀴즈를 풀고, 위쪽 <b>별빛도서관 탭</b>에서 공부를 시작해 보세요.</li></ol><p>체험 마을은 장터와 협력이 열린 1일차예요. 실제 수업에서는 선생님이 날짜를 조절합니다. 메뉴의 내 정보·설정에서 로그아웃하면 학급 코드로 입장할 수 있어요.</p>';
 document.querySelector('main').before(trialGuide);
-const trialApplySchool=applySchool;applySchool=function(data){trialApplySchool(data);trialGuide.hidden=!data.me?.state?.trial;document.body.dataset.trial=String(!!data.me?.state?.trial)};
+const trialApplySchool=applySchool;applySchool=function(data){trialApplySchool(data);const isTrial=!!data.me?.state?.trial;trialGuideKey='shiny-guide-seen:'+(data.me?.id||'practice');const seen=localStorage.getItem(trialGuideKey)==='seen';trialGuide.hidden=!isTrial||(seen&&trialGuide.dataset.manual!=='1');if(isTrial&&!seen&&trialGuide.dataset.presented!=='1'){trialGuide.open=true;trialGuide.dataset.presented='1'}document.body.dataset.trial=String(isTrial)};

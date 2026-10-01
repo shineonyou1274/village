@@ -65,7 +65,7 @@ function syncIllustrations(){
 let selectedBed=null,pendingWork=null,hud=null;
 const selectedInfo=document.createElement('div');selectedInfo.setAttribute('role','region');selectedInfo.className='selected-bed-info';selectedInfo.hidden=true;selectedInfo.setAttribute('aria-label','선택한 밭');selectedInfo.innerHTML='<button class=close-bed-info aria-label="밭 정보 닫기">×</button><b></b><span></span><progress max=100 value=0></progress><button class="selected-bed-action">심기</button>';queueBar.before(selectedInfo);selectedInfo.firstElementChild.onclick=()=>{selectedBed=null;syncGrowthReadout()};
 selectedInfo.lastElementChild.onclick=()=>{if(selectedBed!==null)executeWork(selectedBed)};
-const growthReadout=document.createElement('details');growthReadout.className='farm-growth-readout';growthReadout.setAttribute('aria-label','내 밭 성장 단계');
+const growthReadout=document.createElement('details');growthReadout.className='farm-growth-readout';growthReadout.setAttribute('aria-label','내 밭 성장 단계');growthReadout.open=true;
 growthReadout.innerHTML='<summary>전체 밭 상태 보기</summary><div class="farm-growth-cards"></div>';queueBar.after(growthReadout);
 function syncGrowthReadout(){
  growthReadout.hidden=!farmView;selectedInfo.hidden=!farmView||selectedBed===null;const host=growthReadout.lastElementChild,plots=ensureFarm().plots;
