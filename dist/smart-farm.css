@@ -5,5 +5,5 @@
 .smart-farm-choices{display:flex;gap:6px;flex-wrap:wrap}.smart-farm-choices button{min-height:38px;padding:6px 9px;font-size:12px;border-radius:9px}.smart-farm-water{background:#2e695a;color:white}.smart-farm-water[hidden]{display:none}.smart-farm-water:disabled{opacity:.55}
 .smart-farm-close{position:absolute;right:6px;top:4px;padding:3px 7px;background:transparent;font-size:22px;line-height:1}
 .compact-shell .farm3d-viewport .selected-bed-info>.selected-bed-action{grid-column:1;grid-row:4}
-.compact-shell .farm3d-viewport .selected-bed-info>.smart-farm-bed-button{grid-column:2;grid-row:4;min-height:40px;padding:4px;font-size:18px;border:1px solid #8eb59c;border-radius:9px;background:#e9f4e6}
+.compact-shell .farm3d-viewport .selected-bed-info>.smart-farm-bed-button{grid-column:2;grid-row:4;min-height:40px;padding:4px;font-size:11px;border:1px solid #8eb59c;border-radius:9px;background:#e9f4e6}
 @media(max-width:600px){.smart-farm-panel{left:8px;right:8px;width:auto}.smart-farm-label{font-size:10px;padding:4px 7px}}
