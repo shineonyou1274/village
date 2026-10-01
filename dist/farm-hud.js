@@ -1,8 +1,8 @@
 // Presentation only: authoritative inventory and plot actions remain in schoolAction.
 export function createFarmHud({viewport,selectedInfo,getState,isFarm,selected,labels}){
  const bar=document.createElement('div');bar.className='farm-hud';bar.setAttribute('aria-label','농장 정보');bar.innerHTML='<button data-hud-store type="button"></button><button data-hud-goal type="button"></button>';viewport.append(bar,selectedInfo);
- const help=document.querySelector('.first-steps');if(help)viewport.parentElement.after(help);
- const trialGuide=document.querySelector('.trial-guide');if(trialGuide)viewport.parentElement.after(trialGuide);
+ const help=document.querySelector('.first-steps');if(help)viewport.parentElement.before(help);
+ const trialGuide=document.querySelector('.trial-guide');if(trialGuide)viewport.parentElement.before(trialGuide);
  const growth=document.querySelector('.farm-progression');if(growth)viewport.after(growth);
  if(growth)growth.open=false;
  const goalCard=document.createElement('section');goalCard.className='farm-goal-popover';goalCard.hidden=true;goalCard.setAttribute('aria-label','다음 농장 목표');goalCard.innerHTML='<button type="button" class="farm-goal-close" aria-label="목표 닫기">×</button><b></b><p></p><progress max="1" value="0"></progress><button type="button" class="farm-goal-more">전체 성장표·목장 보기</button>';viewport.append(goalCard);

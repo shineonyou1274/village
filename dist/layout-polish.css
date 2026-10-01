@@ -2,7 +2,15 @@
 .compact-shell[data-screen=farm] .farm-top{display:none!important}
 .compact-shell[data-screen=farm] .farm3d-viewport.has-farm-hud{height:var(--play-height,420px)!important;min-height:320px!important}
 .compact-shell[data-screen=farm] .farm-bottom #expandFarm{display:none!important}
+.compact-shell[data-screen=farm] .farm-bottom{display:none!important}
+.compact-shell:not([data-screen=farm]) .trial-guide,
+.compact-shell:not([data-screen=farm]) .first-steps{display:none!important}
+.compact-shell[data-screen=farm] .trial-guide,
+.compact-shell[data-screen=farm] .first-steps{width:calc(100% - 8px);max-width:none;box-sizing:border-box;margin:0 4px 8px;padding:9px 13px;border-radius:11px;background:#f7f7ea}
+.compact-shell[data-screen=farm] .trial-guide>summary,
+.compact-shell[data-screen=farm] .first-steps>summary{font-size:13px;min-height:24px;line-height:24px}
 .compact-shell[data-screen=farm] .district3d{display:none!important;pointer-events:none}
+.compact-shell:not([data-screen=farm]) .smart-farm-label{display:none!important}
 .compact-shell:not([data-screen=farm]) .farm-seed-menu{display:none!important}
 .compact-shell #compactPrices{display:inline-flex!important;align-items:center;justify-content:center}
 .compact-shell[data-screen=farm] .farm-hud{top:8px;left:8px;right:8px}
@@ -36,13 +44,22 @@
 .compact-shell[data-screen=village] .plaza-actions details>summary{min-height:44px;box-sizing:border-box;border:1px solid #c6d8cc;border-radius:9px;background:white;cursor:pointer}
 .compact-shell[data-screen=village] .plaza-actions .farm3d-controls{position:static;display:flex;flex-wrap:wrap;padding:7px 0}
 .compact-shell[data-screen=village] .plaza-actions .map-view-settings:not([open]) .farm3d-controls{display:none}
+.compact-shell[data-screen=village] .plaza-actions>button,
+.compact-shell[data-screen=village] .plaza-actions>details>summary{min-height:44px;box-sizing:border-box;border-radius:9px;padding:10px 14px;font-size:13px;font-weight:700;white-space:nowrap}
+.compact-shell[data-screen=village] .plaza-actions>[data-plaza-wave],
+.compact-shell[data-screen=village] .plaza-actions>[data-plaza-market]{background:#285c4c;color:#fff;border:1px solid #285c4c}
+.compact-shell[data-screen=village] .plaza-actions>[data-plaza-overview],
+.compact-shell[data-screen=village] .plaza-actions>details>summary{background:#fff;color:#285c4c;border:1px solid #b6cbbd}
+.compact-shell[data-screen=village] .plaza-actions>button:disabled{opacity:.55}
 .plaza-name.is-practice{max-width:none;overflow:visible;text-overflow:clip}
-.compact-shell[data-screen=activity] .activity-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:920px;margin:8px auto 14px}
+.compact-shell[data-screen=activity] .activity-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:none;margin:8px 0 14px}
 .compact-shell[data-screen=activity] .activity-tabs button{display:grid;gap:8px;align-content:center;text-align:left;min-height:105px;padding:16px 18px;border:1px solid #d1dfd4;border-radius:15px;background:#fff;color:#284d3d;box-shadow:0 3px 9px #234a3410}
 .compact-shell[data-screen=activity] .activity-tabs button strong{font-size:18px}
 .compact-shell[data-screen=activity] .activity-tabs button span{font-size:12px;line-height:1.5}
 .compact-shell[data-screen=activity] .activity-tabs button.selected{border-color:#285c4c}
 .compact-shell .passport-pagination button{min-height:48px;min-width:88px;font-size:14px}
+.compact-shell .passport-empty{word-break:keep-all;overflow-wrap:normal;line-height:1.7;max-width:100%}
+.compact-shell .passport-empty button{min-height:42px;margin-left:8px}
 .campus-shell .library3d-stage{max-width:none;margin:0 20px;height:470px}
 .campus-shell .library3d-top strong{font-size:17px}
 @media(max-width:700px){
@@ -57,7 +74,13 @@
  .compact-shell[data-screen=farm] .ranch-marker{left:auto;right:7px}
  .farm-seed-menu{top:99px;left:7px}
  .compact-shell[data-screen=farm] .farm-current-status{right:8px;bottom:61px;max-width:calc(100% - 16px)}
- .compact-shell[data-screen=activity] .activity-tabs{gap:8px;padding:0 12px}
+ .compact-shell[data-screen=village] .plaza-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));overflow:visible}
+ .compact-shell[data-screen=village] .plaza-actions>*{min-width:0;width:100%}
+ .compact-shell[data-screen=village] .plaza-actions>[data-plaza-wave],.compact-shell[data-screen=village] .plaza-actions>[data-plaza-market]{grid-column:span 3}
+ .compact-shell[data-screen=village] .plaza-actions>details,.compact-shell[data-screen=village] .plaza-actions>[data-plaza-overview]{grid-column:span 2;width:100%}
+ .compact-shell[data-screen=village] .plaza-actions>details>summary{width:100%;padding:10px 6px;text-align:center}
+ .compact-shell[data-screen=village] .plaza-actions>button{padding:10px 6px}
+ .compact-shell[data-screen=activity] .activity-tabs{gap:8px;padding:0}
  .compact-shell[data-screen=activity] .activity-tabs button{min-height:95px;padding:12px}
  .compact-shell[data-screen=activity] .activity-tabs button strong{font-size:14px}
  .compact-shell[data-screen=activity] .activity-tabs button span{font-size:10px}
