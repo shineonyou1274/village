@@ -6,3 +6,22 @@
 
 .market-arriving{animation:marketArrive .35s ease-out}.market-toolbar [data-market-return]{background:#e9efdb;color:#34513c}.market-heading h2:focus{outline:none}@keyframes marketArrive{from{opacity:.55;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.market-arriving{animation:none}}
 @media(max-width:650px){.market-toolbar [data-market-return],.market-toolbar [data-market-mine]{width:calc(50% - 3px);order:0}.market-toolbar #newSchoolOffer{order:1}.market-toolbar #marketSync{order:2;width:100%}}
+
+.market-plaza.market-3d{background:#b9d799;border-color:#9cbe75}
+.market-plaza.market-3d canvas{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:manipulation;cursor:pointer}
+.market-3d .market-trees,.market-3d .market-path,.market-3d .market-walk-spots,.market-3d .market-person{display:none}
+.market-3d .market-sign{z-index:2;top:6px;padding:5px 14px;font-size:12px;background:#fff9e4e8}
+.market-3d .market-stalls{position:absolute;inset:0;display:block;pointer-events:none}
+.market-3d .market-stall{position:absolute;display:flex!important;transform:translate(-50%,-50%);width:112px;min-height:35px!important;padding:5px 7px!important;gap:1px;background:#fffdf2e8!important;border:1px solid #8ead81!important;border-radius:9px!important;box-shadow:0 2px 6px #29473535!important;pointer-events:auto}
+.market-3d .market-stall .stall-awning,.market-3d .market-stall .stall-goods{display:none}
+.market-3d .market-stall b{font-size:12px}.market-3d .market-stall small{font-size:10px;white-space:nowrap}
+.market-3d .market-stall.vacant{display:none!important}
+.market-3d .market-visitor,.market-3d .market-hero{width:100px;min-height:0!important;height:auto;z-index:3}
+.market-3d .market-visitor .visitor-name,.market-3d .market-hero .visitor-name{display:inline-block;padding:4px 7px;border:1px solid #aac48d;background:#fffdf3f0;font-size:11px;font-weight:700}
+.market-3d .market-visitor{pointer-events:auto}
+.market-practice-visitor{display:none}.market-3d .market-practice-visitor{display:block}
+.market-3d .plaza-caption{z-index:2;bottom:7px;left:50%;right:auto;transform:translateX(-50%);background:#fffdf0dc;border-radius:8px;padding:5px 9px;white-space:nowrap}
+@media(max-width:650px){.market-3d .market-stall{width:96px;padding:4px!important}.market-3d .market-stall b{font-size:10px}.market-3d .market-stall small{font-size:9px}.market-3d .market-visitor,.market-3d .market-hero{width:78px}.market-3d .market-visitor .visitor-name,.market-3d .market-hero .visitor-name{font-size:9px}.market-3d .plaza-caption{font-size:9px}}
+
+#marketSquare .market-heading{padding:12px 16px 5px}#marketSquare .market-heading h2{font-size:20px;margin:2px 0}#marketSquare .market-heading p{font-size:12px;margin:2px 0}#marketSquare .market-toolbar{padding:0 16px 8px;gap:7px}#marketSquare .market-toolbar button{min-height:38px;font-size:12px}#marketSquare .market-plaza{height:400px}
+@media(max-width:650px){#marketSquare .market-heading{padding:8px 10px 4px}#marketSquare .market-heading small,#marketSquare .market-heading p{display:none}#marketSquare .market-heading h2{font-size:17px;line-height:1.2}#marketSquare .market-count{font-size:10px;padding:5px 7px}#marketSquare .market-toolbar{display:grid;grid-template-columns:1fr 1fr;padding:0 10px 7px;gap:5px}#marketSquare .market-toolbar [data-market-return],#marketSquare .market-toolbar [data-market-mine]{width:100%;grid-row:1}#marketSquare .market-toolbar #newSchoolOffer{grid-column:1/-1;grid-row:2;width:100%}#marketSquare .market-toolbar #marketSync{grid-column:1/-1;grid-row:3;font-size:10px}#marketSquare .market-plaza{height:400px}}
