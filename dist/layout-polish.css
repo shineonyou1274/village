@@ -15,13 +15,14 @@
 .compact-shell #compactPrices{display:inline-flex!important;align-items:center;justify-content:center}
 .compact-shell[data-screen=farm] .farm-hud{top:8px;left:8px;right:8px}
 .compact-shell[data-screen=farm] .farm-hud>*{background:#fffdf1ee;border-color:#d7e6c9;box-shadow:none}
+.farm-action-row{position:absolute;z-index:7;top:55px;left:8px;display:flex;align-items:center;gap:7px;max-width:calc(100% - 16px)}
+.compact-shell:not([data-screen=farm]) .farm-action-row{display:none!important}
+.compact-shell[data-screen=farm] .farm-action-row>button{position:static!important;flex:0 0 auto;margin:0;white-space:nowrap}
 .compact-shell[data-screen=farm] .smart-farm-label,
 .compact-shell[data-screen=farm] .land-expansion-marker,
 .compact-shell[data-screen=farm] .ranch-marker{top:55px;left:auto;right:auto;min-height:40px;max-width:none;padding:7px 10px;border:1px solid #386d59;border-radius:9px;background:#285c4ce8;color:white;font-size:12px;box-shadow:0 2px 6px #284d3b24;z-index:7}
-.compact-shell[data-screen=farm] .smart-farm-label{left:8px}
-.compact-shell[data-screen=farm] .land-expansion-marker{left:145px}
-.compact-shell[data-screen=farm] .ranch-marker{left:355px}
 .farm-seed-menu{position:absolute;z-index:8;top:103px;left:8px;width:max-content;max-width:calc(100% - 16px);color:#284d3d}
+.farm-seed-menu:not([open]) .seed-picker{display:none!important;pointer-events:none}
 .farm-seed-menu>summary{cursor:pointer;list-style:none;min-height:40px;box-sizing:border-box;padding:9px 12px;border:1px solid #9ab79a;border-radius:10px;background:#fffdf1ed;font-size:12px;font-weight:700;box-shadow:0 2px 7px #29473525}
 .farm-seed-menu>summary::-webkit-details-marker{display:none}
 .farm-seed-menu[open]{width:min(340px,calc(100% - 16px));background:#fffdf5f7;border:1px solid #9ab79a;border-radius:12px;box-shadow:0 6px 18px #29473540;overflow:auto;max-height:calc(100% - 110px)}
@@ -69,9 +70,8 @@
  .compact-shell .compact-topline #compactMenuButton{grid-column:3;grid-row:1;white-space:nowrap}
  .compact-shell .compact-topline #compactWeather{grid-column:1/-1;grid-row:2;min-width:0}
  .compact-shell[data-screen=farm] .smart-farm-label,.compact-shell[data-screen=farm] .land-expansion-marker,.compact-shell[data-screen=farm] .ranch-marker{font-size:10px;padding:6px 7px;min-height:38px}
- .compact-shell[data-screen=farm] .smart-farm-label{left:7px}
- .compact-shell[data-screen=farm] .land-expansion-marker{left:106px;max-width:145px}
- .compact-shell[data-screen=farm] .ranch-marker{left:auto;right:7px}
+ .farm-action-row{left:7px;gap:5px;max-width:calc(100% - 14px)}
+ .compact-shell[data-screen=farm] .farm-action-row .land-expansion-marker{max-width:145px}
  .farm-seed-menu{top:99px;left:7px}
  .compact-shell[data-screen=farm] .farm-current-status{right:8px;bottom:61px;max-width:calc(100% - 16px)}
  .compact-shell[data-screen=village] .plaza-actions{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));overflow:visible}

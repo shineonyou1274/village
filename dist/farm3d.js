@@ -141,7 +141,7 @@ const marketBounds=new THREE.Box3(new THREE.Vector3(-5.5,0,-24),new THREE.Vector
 function enterMarket(){state.place='market';if(window.villageNavigate)window.villageNavigate('market');else{tab='market';render()}}
 const marketLabel=villageLabel('중앙 장터',new THREE.Vector3(0,2,-19),()=>plaza.closeView?plaza.click(new THREE.Vector3(0,0,-17),true):enterMarket());marketLabel.setAttribute('aria-label','중앙 장터 입구로 걷기');marketLabel.title='장터 입구까지 걸어가면 입장해요';villageLabel('내 농장으로',new THREE.Vector3(0,2,1),()=>setFarmView(true));
 // Continuous countryside, instanced trees keep the shared world inexpensive.
-const scenery=new THREE.Group();world.add(scenery);
+const scenery=new THREE.Group();villageRoot.add(scenery);
 const trunks=new THREE.InstancedMesh(new THREE.CylinderGeometry(.14,.22,1.3,5),mat(0x8d6b43),56);
 const crowns=new THREE.InstancedMesh(new THREE.ConeGeometry(.9,2.4,6),mat(0x4e8850),56);
 const dummy=new THREE.Object3D();for(let i=0;i<56;i++){let x,z;if(i<20){x=-29+i*3;z=-47+Math.sin(i)*.7}else if(i<40){x=-29+(i-20)*3;z=12+Math.sin(i)*.8}else{x=i%2?-30:30;z=-42+Math.floor((i-40)/2)*7}dummy.position.set(x,.65,z);dummy.scale.setScalar(.8+(i%4)*.12);dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);dummy.position.y=2;dummy.updateMatrix();crowns.setMatrixAt(i,dummy.matrix)}scenery.add(trunks,crowns);

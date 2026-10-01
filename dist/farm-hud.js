@@ -8,6 +8,8 @@ export function createFarmHud({viewport,selectedInfo,getState,isFarm,selected,la
  const goalCard=document.createElement('section');goalCard.className='farm-goal-popover';goalCard.hidden=true;goalCard.setAttribute('aria-label','다음 농장 목표');goalCard.innerHTML='<button type="button" class="farm-goal-close" aria-label="목표 닫기">×</button><b></b><p></p><progress max="1" value="0"></progress><button type="button" class="farm-goal-more">전체 성장표·목장 보기</button>';viewport.append(goalCard);
  const notice=document.querySelector('.first-harvest-notice');if(notice)viewport.append(notice);
  const status=document.querySelector('#farmerStatus');if(status)viewport.append(status);
+ const actions=document.createElement('div');actions.className='farm-action-row';actions.setAttribute('aria-label','농장 기능');viewport.append(actions);
+ for(const selector of ['.smart-farm-label','.land-expansion-marker','.ranch-marker']){const button=viewport.querySelector(selector);if(button)actions.append(button)}
  const seeds=document.querySelector('.seed-picker');if(seeds){const picker=document.createElement('details');picker.className='farm-seed-menu';picker.innerHTML='<summary>🌱 씨앗 · 상추</summary>';viewport.append(picker);picker.append(seeds);const caption=picker.querySelector('summary');seeds.addEventListener('click',e=>{const button=e.target.closest('[data-seed]');if(!button||button.disabled)return;caption.textContent='🌱 씨앗 · '+button.firstChild.textContent.trim().split(/\s+/).slice(1).join(' ');picker.open=false});}
  bar.querySelector('[data-hud-store]').onclick=()=>document.querySelector('[data-menu-dest="bag"]').click();
  const goalButton=bar.querySelector('[data-hud-goal]');goalButton.setAttribute('aria-expanded','false');
