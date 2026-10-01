@@ -3,20 +3,20 @@ export function createFarmHud({viewport,selectedInfo,getState,isFarm,selected,la
  const bar=document.createElement('div');bar.className='farm-hud';bar.setAttribute('aria-label','농장 정보');bar.innerHTML='<button data-hud-store type="button"></button><button data-hud-goal type="button"></button>';viewport.append(bar,selectedInfo);
  const help=document.querySelector('.first-steps');if(help)viewport.parentElement.before(help);
  const trialGuide=document.querySelector('.trial-guide');if(trialGuide)viewport.parentElement.before(trialGuide);
- const growth=document.querySelector('.farm-progression');if(growth)viewport.after(growth);
+ const growth=document.querySelector('.farm-progression');
  if(growth)growth.open=false;
- const goalCard=document.createElement('section');goalCard.className='farm-goal-popover';goalCard.hidden=true;goalCard.setAttribute('aria-label','다음 농장 목표');goalCard.innerHTML='<button type="button" class="farm-goal-close" aria-label="목표 닫기">×</button><b></b><p></p><progress max="1" value="0"></progress><button type="button" class="farm-goal-more">전체 성장표·목장 보기</button>';viewport.append(goalCard);
+ const goalCard=document.createElement('section');goalCard.className='farm-goal-popover';goalCard.hidden=true;goalCard.setAttribute('aria-label','다음 농장 목표');goalCard.innerHTML='<button type="button" class="farm-goal-close" aria-label="목표 닫기">×</button><b></b><p></p><progress max="1" value="0"></progress>';viewport.append(goalCard);if(growth)goalCard.append(growth);
  const notice=document.querySelector('.first-harvest-notice');if(notice)viewport.append(notice);
  const status=document.querySelector('#farmerStatus');if(status)viewport.append(status);
- const actions=document.createElement('div');actions.className='farm-action-row';actions.setAttribute('aria-label','농장 기능');viewport.append(actions);
+ const actionMenu=document.createElement('details');actionMenu.className='farm-action-menu';actionMenu.innerHTML='<summary>시설·확장</summary><div class="farm-action-row" aria-label="농장 기능"></div>';viewport.append(actionMenu);const actions=actionMenu.querySelector('.farm-action-row');
  for(const selector of ['.smart-farm-label','.land-expansion-marker','.ranch-marker']){const button=viewport.querySelector(selector);if(button)actions.append(button)}
+ actions.addEventListener('click',event=>{if(event.target.closest('button'))actionMenu.open=false});
  const seeds=document.querySelector('.seed-picker');if(seeds){const picker=document.createElement('details');picker.className='farm-seed-menu';picker.innerHTML='<summary>🌱 씨앗 · 상추</summary>';viewport.append(picker);picker.append(seeds);const caption=picker.querySelector('summary');seeds.addEventListener('click',e=>{const button=e.target.closest('[data-seed]');if(!button||button.disabled)return;caption.textContent='🌱 씨앗 · '+button.firstChild.textContent.trim().split(/\s+/).slice(1).join(' ');picker.open=false});}
  bar.querySelector('[data-hud-store]').onclick=()=>document.querySelector('[data-menu-dest="bag"]').click();
  const goalButton=bar.querySelector('[data-hud-goal]');goalButton.setAttribute('aria-expanded','false');
- function closeGoal(){goalCard.hidden=true;goalButton.setAttribute('aria-expanded','false')}
- goalButton.onclick=()=>{if(!goalCard.hidden){closeGoal();return}document.querySelector('.smart-farm-panel')?.setAttribute('hidden','');goalCard.hidden=false;goalButton.setAttribute('aria-expanded','true')};
+ function closeGoal(){goalCard.hidden=true;if(growth)growth.open=false;goalButton.setAttribute('aria-expanded','false')}
+ goalButton.onclick=()=>{if(!goalCard.hidden){closeGoal();return}document.querySelector('.smart-farm-panel')?.setAttribute('hidden','');goalCard.hidden=false;if(growth)growth.open=true;goalButton.setAttribute('aria-expanded','true')};
  goalCard.querySelector('.farm-goal-close').onclick=closeGoal;
- goalCard.querySelector('.farm-goal-more').onclick=()=>{closeGoal();if(growth){growth.open=true;growth.scrollIntoView({block:'start',behavior:'smooth'})}};
  viewport.classList.add('has-farm-hud');
  function fit(){if(!isFarm())return;const documentTop=viewport.getBoundingClientRect().top+scrollY;viewport.style.setProperty('--play-height',Math.min(680,Math.max(300,innerHeight-documentTop-12))+'px');}
  new ResizeObserver(fit).observe(document.querySelector('.compact-tabs'));window.addEventListener('resize',fit);window.addEventListener('village-screen-change',()=>{requestAnimationFrame(fit)});
