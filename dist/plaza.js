@@ -23,7 +23,7 @@ export function createPlaza({world,viewport,template,camera,enterMarket}){
   if(!active()||busy)return;
   busy=true;const t=schoolToken,gen=generation,destination=queued,greeting=wave;queued=null;wave=false;
   try{let data;
-   if(state.trial){const self=rows.find(p=>p.id===classroomData.me.id),pos=self?current(self):{x:-1,z:-12};if(greeting)localWaveUntil=clock()+4000;data={paused:false,visitors:[{id:classroomData.me.id,name:state.name,...pos,tx:destination?.x??self?.tx??pos.x,tz:destination?.z??self?.tz??pos.z,wave:clock()<localWaveUntil},{id:'practice-guide',name:'연습 친구 · 실제 접속 아님',x:2,z:-13,tx:2,tz:-13,wave:false}]};}
+   if(state.trial){const self=rows.find(p=>p.id===classroomData.me.id),pos=self?current(self):{x:-1,z:-12};if(greeting)localWaveUntil=clock()+4000;data={paused:false,visitors:[{id:classroomData.me.id,name:state.name,...pos,tx:destination?.x??self?.tx??pos.x,tz:destination?.z??self?.tz??pos.z,wave:clock()<localWaveUntil},{id:'practice-guide',name:'연습 친구',x:2,z:-13,tx:2,tz:-13,wave:false}]};}
    else data=await schoolFetch('/api/plaza',destination?{action:'move',...destination}:{action:greeting?'wave':'visit'},t);
    if(gen!==generation||!active()||t!==schoolToken){await leave(t);return}
    rows=data.visitors.map(p=>({...p,received:clock()}));lastOK=clock();paused=data.paused;failed=false;joined=true;

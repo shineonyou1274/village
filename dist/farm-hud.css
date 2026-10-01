@@ -22,4 +22,7 @@
 .compact-shell[data-screen=farm] .has-3d .farm-bottom>span:first-child{display:none!important}
 .compact-shell[data-screen=farm] .has-farm-hud .storage3d{display:none!important}
 .compact-shell .farm3d-viewport .selected-bed-info>.smart-farm-bed-button{font-size:11px;line-height:1.1;white-space:normal;padding:4px 2px}
+.compact-shell .farm3d-viewport .selected-bed-info.is-working{width:174px!important;min-height:43px;grid-template-columns:minmax(0,1fr) 28px;align-items:center}
+.compact-shell .farm3d-viewport .selected-bed-info.is-working>span,.compact-shell .farm3d-viewport .selected-bed-info.is-working>progress,.compact-shell .farm3d-viewport .selected-bed-info.is-working>.selected-bed-action,.compact-shell .farm3d-viewport .selected-bed-info.is-working>.smart-farm-bed-button{display:none}
+.compact-shell .farm3d-viewport .selected-bed-info.is-working:after{display:none}
 .compact-shell.game-layout .district3d{font-size:14px;min-height:34px;padding:7px 11px;line-height:1.2}@media(max-width:760px){.compact-shell.game-layout .district3d{font-size:12px;min-height:32px;padding:6px 8px}}

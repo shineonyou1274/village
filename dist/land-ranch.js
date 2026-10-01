@@ -7,7 +7,7 @@ export function createLandRanch({land,viewport,getState,isFarm,onExpand,onCowAct
  const loader=new GLTFLoader(),assets=new Map(),root=new THREE.Group();land.add(root);
  const load=(folder,name)=>new Promise(resolve=>loader.load(`./assets/${folder}/${name}.glb`,g=>{assets.set(name,g);resolve(g)},undefined,()=>resolve(null)));
  let plotCount=-1,landReady=false,cowModel=null,cowMixer=null,cowActions={},cowClip='',lastCare='',careMotion='',careMotionUntil=0;
- const road=new THREE.Group(),fence=new THREE.Group(),ranch=new THREE.Group();root.add(road,fence,ranch);
+ const road=new THREE.Group(),fence=new THREE.Group(),ranch=new THREE.Group();ranch.position.x=-2;root.add(road,fence,ranch);
  const barnSpot=new THREE.Vector3(9.2,0,-4),cowSpot=new THREE.Vector3(9.2,0,1.5);
  const marker=document.createElement('button');marker.type='button';marker.className='land-expansion-marker';marker.onpointerdown=e=>{e.preventDefault();e.stopPropagation();onExpand()};marker.onclick=e=>{e.stopPropagation();if(e.detail===0)onExpand()};viewport.append(marker);
  const ranchButton=document.createElement('button');ranchButton.type='button';ranchButton.className='ranch-marker';ranchButton.textContent='🐄 목장';const toggleRanch=()=>{panel.hidden=!panel.hidden;onRanchView(!panel.hidden);if(!panel.hidden)updateCare()};ranchButton.onpointerdown=e=>{e.preventDefault();e.stopPropagation();toggleRanch()};ranchButton.onclick=e=>{e.stopPropagation();if(e.detail===0)toggleRanch()};viewport.append(ranchButton);
