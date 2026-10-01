@@ -39,10 +39,10 @@ async function trial() {
       await page.waitForFunction(() => document.body.dataset.screen === 'activity');
       assert.equal(new URL(page.url()).hash, '#activity');
       await page.locator('.compact-tabs [data-screen="farm"]').click();
-      const before = await page.locator('.farm3d-viewport').evaluate(el => el.getBoundingClientRect().height);
+      const before = await page.evaluate(() => ({mapTop:document.querySelector('.farm3d-viewport').getBoundingClientRect().top,mapHeight:document.querySelector('.farm3d-viewport').getBoundingClientRect().height,tabsTop:document.querySelector('.compact-tabs').getBoundingClientRect().top}));
       await page.locator('#compactPrices').click();
       assert(await page.locator('.compact-price-box').isVisible());
-      assert.equal(await page.locator('.farm3d-viewport').evaluate(el => el.getBoundingClientRect().height), before, 'price overlay preserves map height');
+      assert.deepEqual(await page.evaluate(() => ({mapTop:document.querySelector('.farm3d-viewport').getBoundingClientRect().top,mapHeight:document.querySelector('.farm3d-viewport').getBoundingClientRect().height,tabsTop:document.querySelector('.compact-tabs').getBoundingClientRect().top})),before,'price overlay preserves tab and map positions');
       await page.keyboard.press('Escape');
       assert(await page.locator('.compact-price-box').isHidden());
       await page.locator('#compactPrices').click();
