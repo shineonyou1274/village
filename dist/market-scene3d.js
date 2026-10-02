@@ -11,7 +11,7 @@ export function createMarketScene({onPeer,onSpot}){
  let stalls=[],actors=new Map(),last=0,ready=false,failed=false,previousCount=0;
  const palette=[0x659ac6,0xc77b8f,0x89a55b,0xeeb45c,0x9b86bd,0x57aaa0];
  const color=id=>palette[Array.from(id).reduce((n,c)=>n+c.charCodeAt(0),0)%palette.length];
- const spotPosition=(spot,mobile)=>new THREE.Vector3((spot%6-2.5)*(mobile?1.65:3.7),.1,1.85+Math.floor(spot/6)*2.15);
+ const spotPosition=(spot,mobile)=>new THREE.Vector3((spot%6-2.5)*(mobile?1.4:3.2),.1,1.15+Math.floor(spot/6)*1.15);
  const promise=Promise.all([...names.map(name=>load(`./assets/market/${name}.glb`)),load('./assets/avatars/student-base.glb')]).then(rows=>{
   assets=new Map(names.map((name,i)=>[name,rows[i]]));avatar=rows.at(-1);
   if(!['idle','walk','wave'].every(name=>avatar.animations.some(clip=>clip.name===name)))throw Error('Student avatar animation missing');
@@ -53,7 +53,7 @@ export function createMarketScene({onPeer,onSpot}){
  function makeActor(row){
   const group=new THREE.Group(),figure=avatar.scene.clone(true),changed=new Map();
   figure.scale.setScalar(1.14);group.add(figure);group.scale.setScalar(1.2);
-  figure.traverse(node=>{if(!node.isMesh||node.material?.name!=='shirt')return;if(!changed.has(node.material)){const material=node.material.clone();material.color.setHex(row.practice?0xc77b8f:color(row.id));changed.set(node.material,material)}node.material=changed.get(node.material)});
+  figure.traverse(node=>{if(!node.isMesh||!node.material)return;if(!changed.has(node.material)){const material=node.material.clone();if(material.name==='shirt')material.color.setHex(row.practice?0xc77b8f:color(row.id));changed.set(node.material,material)}node.material=changed.get(node.material)});
   const mixer=new THREE.AnimationMixer(figure),actions=Object.fromEntries(avatar.animations.map(clip=>[clip.name,mixer.clipAction(clip)]));
   scene.add(group);const actor={group,mixer,actions,current:'',changed,target:new THREE.Vector3(),waving:false};actors.set(row.id,actor);return actor;
  }
@@ -63,7 +63,7 @@ export function createMarketScene({onPeer,onSpot}){
  function project(point){const v=point.clone().project(camera);return {x:(v.x*.5+.5)*host.clientWidth,y:(-v.y*.5+.5)*host.clientHeight}}
  function placeLabels(){if(!host||!latest)return;
   host.querySelectorAll('.market-stall').forEach((button,i)=>{const item=stalls[i];if(!item)return;const p=project(new THREE.Vector3(item.x,2.65,-1.8));button.style.left=p.x+'px';button.style.top=p.y+'px'});
-  for(const [id,a] of actors){const marker=id===latest.me.id?host.querySelector('#marketHero'):host.querySelector(`.market-visitor[data-market-peer="${CSS.escape(id)}"]`);if(!marker)continue;const p=project(a.group.position.clone().add(new THREE.Vector3(0,2.3,0)));marker.style.left=p.x+'px';marker.style.top=p.y+'px';marker.hidden=p.x<25||p.x>host.clientWidth-25||p.y<15||p.y>host.clientHeight-15}
+  for(const [id,a] of actors){const marker=id===latest.me.id?host.querySelector('#marketHero'):host.querySelector(`.market-visitor[data-market-peer="${CSS.escape(id)}"]`);if(!marker)continue;const p=project(a.group.position.clone().add(new THREE.Vector3(0,2.3,0)));marker.style.left=Math.max(45,Math.min(host.clientWidth-45,p.x))+'px';marker.style.top=Math.max(22,Math.min(host.clientHeight-22,p.y))+'px';marker.hidden=false}
  }
  function frame(now){requestAnimationFrame(frame);if(!renderer||!host||document.hidden||document.body.dataset.screen!=='market'||!host.isConnected)return;if(now-last<45)return;const dt=Math.min(.08,(now-last)/1000||.05);last=now;
   if(canvas.parentElement!==host)host.prepend(canvas);
@@ -84,7 +84,7 @@ export function createMarketScene({onPeer,onSpot}){
   if(!rows.some(row=>row.id===data.me.id))rows.unshift({id:data.me.id,spot:data.spot});
   if(data.trial){const guide=data.shown.find(peer=>peer.id!==data.me.id&&!rows.some(row=>row.id===peer.id));if(guide)rows.push({id:guide.id,spot:9,practice:true})}
   const ids=new Set(rows.map(row=>row.id));for(const id of actors.keys())if(!ids.has(id))removeActor(id);
-  for(const row of rows){const a=actors.get(row.id)||makeActor(row);a.target.copy(spotPosition(row.id===data.me.id?data.spot:row.spot,mobile));if(!a.group.userData.placed){a.group.position.copy(a.target);a.group.userData.placed=true}a.waving=row.greeting==='wave'}
+  for(const row of rows){const a=actors.get(row.id)||makeActor(row);a.target.copy(spotPosition(row.id===data.me.id?data.spot:row.spot,mobile));if(!a.group.userData.placed){a.group.position.copy(a.target);a.group.userData.placed=true}a.waving=row.greeting==='wave';for(const material of a.changed.values()){material.transparent=!!row.away;material.opacity=row.away?.38:1;material.depthWrite=!row.away}}
   host.dataset.actors=String(actors.size);host.dataset.stalls=String(stalls.length);resize();placeLabels();
  }
  return {update,ready:promise};

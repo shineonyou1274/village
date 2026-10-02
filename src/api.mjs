@@ -65,7 +65,7 @@ statements.push(db.prepare('INSERT INTO players(id,room,name,token_hash,state,la
 if(i)statements.push(db.prepare('INSERT INTO offers(id,room,seller,give_item,give_qty,want_item,want_qty,created) VALUES(?,?,?,?,1,0,1,?)').bind(id+'-offer-'+i,id,id+'-'+i,i,now));}
 await db.batch(statements);}
 const a=await auth(new Request(req.url,{headers:{authorization:'Bearer '+token}}),db);return json({...await snapshot(db,a),token});}
-if(u.pathname==='/api/join'&&req.method==='POST'){const roomCode=String(b.roomCode||'').trim().toUpperCase(),token=String(b.code||'').trim().toLowerCase();await limiter(db,'join:'+await hash((req.headers.get('cf-connecting-ip')||'local')+roomCode),Date.now(),160);const a=await auth(new Request(req.url,{headers:{authorization:'Bearer '+token}}),db);if(a.room.code!==roomCode)err('학급 코드와 입장 코드를 확인해 주세요.',401);if(a.player)await db.prepare('UPDATE players SET last_seen=? WHERE id=?').bind(Date.now(),a.player.id).run();return json({...await snapshot(db,a),token})}
+if(u.pathname==='/api/join'&&req.method==='POST'){const roomCode=String(b.roomCode||'').replace(/\s/g,'').toUpperCase(),token=String(b.code||'').replace(/\s/g,'').toLowerCase();await limiter(db,'join:'+await hash((req.headers.get('cf-connecting-ip')||'local')+roomCode),Date.now(),160);let a;try{a=await auth(new Request(req.url,{headers:{authorization:'Bearer '+token}}),db)}catch(e){if(e.status===401)err('입장 코드가 맞지 않아요. 선생님이 준 코드를 다시 확인해 주세요.',401);throw e}if(a.room.code!==roomCode)err('학급 코드와 입장 코드를 확인해 주세요.',401);if(a.player)await db.prepare('UPDATE players SET last_seen=? WHERE id=?').bind(Date.now(),a.player.id).run();return json({...await snapshot(db,a),token})}
 let a=await auth(req,db);const managed=b.managedRoom||u.searchParams.get('classroom');a=await managedAuth(db,a,managed);if(u.pathname==='/api/plaza')return await plazaApi(req,db,a,b,{json,err,limiter});if(u.pathname==='/api/market-presence'){
 if(!a.player)err('학생으로 입장해 주세요.',403);
 const now=Date.now();
@@ -76,7 +76,9 @@ if(req.method==='POST'){
   if(!['visit','greet'].includes(b.action))err('장터 행동을 확인해 주세요.');
   await limiter(db,'market:'+a.player.id,now,30);
   if(b.action==='visit'){
-   const spot=int(b.spot,0,11);
+   let spot=int(b.spot,0,11);
+   const previous=await db.prepare('SELECT spot FROM market_visitors WHERE player=?').bind(a.player.id).first();
+   if(!previous){const rank=await db.prepare('SELECT count(*) n FROM players WHERE room=? AND id<?').bind(a.room.id,a.player.id).first();const n=rank.n%12;spot=(8+(n%4)*3+Math.floor(n/4))%12;const taken=await db.prepare('SELECT spot FROM market_visitors WHERE room=? AND seen>?').bind(a.room.id,now-35000).all();const used=new Set(taken.results.map(row=>row.spot));if(used.has(spot))for(const offset of [3,6,9,1,2,4,5,7,8,10,11]){const candidate=(spot+offset)%12;if(!used.has(candidate)){spot=candidate;break}}}
    await db.prepare('INSERT INTO market_visitors(player,room,seen,spot) VALUES(?,?,?,?) ON CONFLICT(player) DO UPDATE SET seen=excluded.seen,spot=excluded.spot').bind(a.player.id,a.room.id,now,spot).run();
   }else{
    if(!['wave','thanks','together'].includes(b.greeting))err('준비된 인사를 골라 주세요.');

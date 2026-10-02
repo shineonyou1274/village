@@ -15,7 +15,8 @@ export async function plazaApi(req,db,a,b,{json,err,limiter}){
    const old=await db.prepare('SELECT * FROM plaza_visitors WHERE player=?').bind(id).first();
    const live=old&&old.seen>now-15000;
    const slot=live?0:(await db.prepare('SELECT count(*) n FROM players WHERE room=? AND id<?').bind(a.room.id,id).first()).n;
-   const at=live?position(old,now):{x:(slot%6-2.5)*1.4,z:-11.5-(Math.floor(slot/6)%5)*1.1};
+   // Keep the first arrivals far enough apart for both avatars and nameplates.
+   const at=live?position(old,now):{x:(slot%5-2)*2.2,z:-11.5-(Math.floor(slot/5)%6)};
    let tx=live?old.tx:at.x,tz=live?old.tz:at.z,greeted=live?old.greeted:0;
    if(b.action==='move'){if(typeof b.x!=='number'||typeof b.z!=='number'||!Number.isFinite(b.x)||!Number.isFinite(b.z)||b.x<-4.8||b.x>4.8||b.z<-17||b.z>-10.8)err('광장 안의 길을 선택해 주세요.');tx=b.x;tz=b.z;}
    if(b.action==='wave'){if(greeted>now-5000)err('인사는 5초 뒤에 다시 보낼 수 있어요.',429);greeted=now;}

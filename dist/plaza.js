@@ -27,11 +27,11 @@ export function createPlaza({world,viewport,template,camera,enterMarket}){
    if(state.trial){const self=rows.find(p=>p.id===classroomData.me.id),pos=self?current(self):{x:-1,z:-12};if(greeting)localWaveUntil=clock()+4000;data={paused:false,visitors:[{id:classroomData.me.id,name:state.name,...pos,tx:destination?.x??self?.tx??pos.x,tz:destination?.z??self?.tz??pos.z,wave:clock()<localWaveUntil},{id:'practice-guide',name:'연습 친구',x:2,z:-13,tx:2,tz:-13,wave:false}]};}
    else data=await schoolFetch('/api/plaza',destination?{action:'move',...destination}:{action:greeting?'wave':'visit'},t);
    if(gen!==generation||!active()||t!==schoolToken){await leave(t);return}
-   rows=data.visitors.map(p=>({...p,received:clock()}));lastOK=clock();paused=data.paused;failed=false;joined=true;
+   const now=clock(),incoming=data.visitors.map(p=>({...p,received:now})),present=new Set(incoming.map(p=>p.id));for(const old of rows){if(present.has(old.id)||old.id===classroomData.me.id)continue;const until=old.awayUntil||now+15000;if(until>now){const pos=current(old);incoming.push({...old,...pos,tx:pos.x,tz:pos.z,received:now,wave:false,away:true,awayUntil:until})}}rows=incoming;lastOK=now;paused=data.paused;failed=false;joined=true;
    // Render server-derived movement, not a separate client position.
-   for(const p of rows){const a=actors.get(p.id)||make(p);a.label.textContent=(p.id===classroomData.me.id?p.name+' · 나':state.trial&&p.id==='practice-guide'?'연습 친구':p.name)+(p.wave?' 👋':'');a.label.classList.toggle('is-me',p.id===classroomData.me.id);a.label.classList.toggle('is-practice',state.trial&&p.id==='practice-guide');}
+   for(const p of rows){const a=actors.get(p.id)||make(p);a.label.textContent=(p.id===classroomData.me.id?p.name+' · 나':state.trial&&p.id==='practice-guide'?'연습 친구':p.name)+(p.wave?' 👋':'')+(p.away?' · 자리 비움':'');a.label.classList.toggle('is-me',p.id===classroomData.me.id);a.label.classList.toggle('is-practice',state.trial&&p.id==='practice-guide');a.label.classList.toggle('away',!!p.away);}
    const ids=new Set(rows.map(p=>p.id));for(const [id,a]of actors){if(!ids.has(id)){removeActor(a);actors.delete(id)}}
-   status(state.trial?'혼자 체험 중 · 연습 친구와 이동을 연습해요':`같은 광장에 ${rows.length}명 · 연결됨`);arrive();
+   status(state.trial?'혼자 체험 중 · 연습 친구와 이동을 연습해요':`같은 광장에 ${rows.filter(p=>!p.away).length}명 · 연결됨`);arrive();
   }catch(e){if(gen===generation){failed=true;gate=false;status(e.message||'연결을 다시 확인하고 있어요.');if(clock()-lastOK>15000)clear();}}
   finally{busy=false;if(active())timer=setTimeout(poll,1100+Math.random()*150);}
  }
@@ -51,7 +51,7 @@ export function createPlaza({world,viewport,template,camera,enterMarket}){
   const tags=[];
   for(const p of rows){const a=actors.get(p.id);if(!a)continue;const pos=current(p),moving=Math.hypot(p.tx-pos.x,p.tz-pos.z)>.08;a.g.position.set(pos.x,.1+(moving?Math.abs(Math.sin(now/90))*.035:0),pos.z);if(a.update)a.update(dt,moving,p.wave);else{const limbs=a.g.children[0]?.children;if(limbs?.[2]&&limbs?.[3]){limbs[2].rotation.x=moving?Math.sin(now/90)*.6:0;limbs[3].rotation.x=-limbs[2].rotation.x;}}if(moving)a.g.rotation.y=Math.atan2(p.tx-pos.x,p.tz-pos.z);const v=a.g.position.clone().add(new THREE.Vector3(0,2.3,0)).project(camera),x=(v.x*.5+.5)*viewport.clientWidth,y=(-v.y*.5+.5)*viewport.clientHeight;a.label.style.left=x+'px';a.label.style.top=y+'px';a.label.dataset.x=pos.x.toFixed(2);a.label.dataset.z=pos.z.toFixed(2);tags.push({a,p,x,y});}
   tags.sort((a,b)=>Number(b.p.id===classroomData?.me?.id)-Number(a.p.id===classroomData?.me?.id)||Number(b.p.wave)-Number(a.p.wave));
-  const shown=[];for(const {a,x,y}of tags){const width=Math.min(130,Math.max(70,a.label.textContent.length*10+12)),left=x-width/2,right=x+width/2,top=y-28,bottom=y;const clear=shown.every(box=>right<box.left-4||left>box.right+4||bottom<box.top-4||top>box.bottom+4);a.label.hidden=!root.visible||!clear||left<0||right>viewport.clientWidth;if(!a.label.hidden)shown.push({left,right,top,bottom})}
+  const shown=[];for(const {a,x,y}of tags){const width=Math.min(130,Math.max(70,a.label.textContent.length*10+12)),left=Math.max(4,Math.min(viewport.clientWidth-width-4,x-width/2)),right=left+width;let top=Math.max(4,y-28),bottom=top+28;for(let n=0;n<6&&shown.some(box=>right>=box.left-4&&left<=box.right+4&&bottom>=box.top-4&&top<=box.bottom+4);n++){top=Math.max(4,top-31);bottom=top+28}a.label.hidden=!root.visible||viewport.clientWidth<width+8;a.label.style.left=left+width/2+'px';a.label.style.top=bottom+'px';if(!a.label.hidden)shown.push({left,right,top,bottom})}
   arrive();
  }};
 }
