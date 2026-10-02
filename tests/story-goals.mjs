@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import path from 'node:path';
+
+const base=process.env.TEST_URL||'http://127.0.0.1:8787';
+assert(new URL(base).hostname==='127.0.0.1'&&process.env.TEST_DB&&path.resolve(process.env.TEST_DB).startsWith(path.resolve('test-output')+path.sep),'Use an isolated local test database');
+const setup=(await readFile('private/teacher-setup.txt','utf8')).trim();
+async function call(route,body,token){const response=await fetch(base+route,{method:body?'POST':'GET',headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});return {status:response.status,data:await response.json()}}
+const room=(await call('/api/create',{setupKey:setup,size:16})).data;
+assert(room?.teacherKey);
+const [first,second]=room.students;
+let result=await call('/api/story/start',{participants:16},room.teacherKey);
+assert.equal(result.data.mission.target,2);
+assert.equal(result.data.mission.goal,4);
+result=await call('/api/action',{action:'mission_task',item:0,answer:1,requestId:'small-class-road'},first.code);
+assert.equal(result.status,200);
+assert.equal(result.data.mission.counts[0],1);
+assert.equal(result.data.room.market,false);
+assert.equal((await call('/api/story/goals',{participants:3},first.code)).status,403);
+assert.equal((await call('/api/story/goals',{participants:0},room.teacherKey)).status,400);
+result=await call('/api/story/goals',{participants:3},room.teacherKey);
+assert.equal(result.status,200,JSON.stringify(result.data));
+assert.equal(result.data.mission.target,1);
+assert.equal(result.data.mission.goal,1);
+assert.equal(result.data.mission.counts[0],1);
+assert.equal(result.data.room.market,true);
+result=await call('/api/action',{action:'mission_task',item:1,answer:0,requestId:'small-class-power'},second.code);
+assert.equal(result.status,200,JSON.stringify(result.data));
+assert.equal(result.data.room.weather,4);
+assert.equal(result.data.mission.counts[1],1);
+console.log('PASS: teacher-only goal reduction preserves contributions and unlocks completed stages');
