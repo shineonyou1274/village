@@ -58,7 +58,7 @@
  function changed(){if(active()){draw();if(!wasMarket){const root=$('#marketSquare');root?.classList.remove('market-arriving');void root?.offsetWidth;root?.classList.add('market-arriving');const heading=root?.querySelector('h2');heading?.setAttribute('tabindex','-1');heading?.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'})}wasMarket=true;sync()}else{wasMarket=false;leave()}}
  window.addEventListener('resize',()=>{lastKey='';draw()});window.addEventListener('village-screen-change',changed);document.addEventListener('visibilitychange',changed);
  window.addEventListener('pagehide',()=>{if(activeToken)fetch('/api/market-presence',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+activeToken},body:JSON.stringify({action:'leave'}),keepalive:true}).catch(()=>{})});
- async function tick(){if(active())await sync();else if(activeToken)await leave();timer=setTimeout(tick,4500+Math.random()*1000)}
+ async function tick(){if(active()){await sync();if(active())await refreshSchool()}else if(activeToken)await leave();timer=setTimeout(tick,4500+Math.random()*1000)}
  // One completion-based heartbeat, independent of frequent scene rendering.
  timer=setTimeout(tick,500);window.addEventListener('village-screen-change',()=>{if(!timer)timer=setTimeout(tick,500)});
  changed();

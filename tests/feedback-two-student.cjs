@@ -114,8 +114,7 @@ const action = (token, name, rest = {}) => api('/api/action', {action: name, req
     const [sellerState, buyerState] = await Promise.all([api('/api/state', null, first), api('/api/state', null, second)]);
     assert.equal(sellerState.me.state.stock[1], 1);
     assert.equal(buyerState.me.state.stock[0], 2);
-    await seller.evaluate(() => refreshSchool());
-    await seller.locator('#toast').getByText(/과 물건을 교환했어요/).waitFor({timeout: 8000});
+    await seller.locator('#toast').getByText(/과 물건을 교환했어요/).waitFor({timeout: 10000});
     const presence = await api('/api/market-presence', null, second);
     assert.equal(new Set(presence.visitors.map(visitor => visitor.spot)).size, 2, 'Two visitors need distinct market positions');
     await buyer.setViewportSize({width: 390, height: 844});
