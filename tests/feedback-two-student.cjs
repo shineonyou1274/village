@@ -114,6 +114,8 @@ const action = (token, name, rest = {}) => api('/api/action', {action: name, req
     const [sellerState, buyerState] = await Promise.all([api('/api/state', null, first), api('/api/state', null, second)]);
     assert.equal(sellerState.me.state.stock[1], 1);
     assert.equal(buyerState.me.state.stock[0], 2);
+    await seller.evaluate(() => refreshSchool());
+    await seller.locator('#toast').getByText(/과 물건을 교환했어요/).waitFor({timeout: 8000});
     const presence = await api('/api/market-presence', null, second);
     assert.equal(new Set(presence.visitors.map(visitor => visitor.spot)).size, 2, 'Two visitors need distinct market positions');
     await buyer.setViewportSize({width: 390, height: 844});
@@ -137,9 +139,11 @@ const action = (token, name, rest = {}) => api('/api/action', {action: name, req
     assert.match(await seller.locator('#compactWeather').innerText(), /봄 축제 수요/);
     await Promise.all([seller.locator('.compact-tabs [data-screen="village"]').click(), buyer.locator('.compact-tabs [data-screen="village"]').click()]);
     await buyer.locator('.plaza-name:not(.is-me)').first().waitFor({timeout: 15000});
+    assert.equal(await buyer.locator('.plaza-name.is-practice').count(), 0, 'Classmates must not become practice avatars');
     await seller.locator('.compact-tabs [data-screen="farm"]').click();
     await buyer.locator('.plaza-name.away').first().waitFor({timeout: 10000});
     assert.match(await buyer.locator('.plaza-name.away').first().innerText(), /자리 비움/);
+    assert.match(await buyer.locator('.plaza-connection').innerText(), /자리 비움 1명/);
     assert.deepEqual(errors, []);
     console.log('PASS: two-student stock validation, dialog feedback, trade, and mission counts');
   } finally {

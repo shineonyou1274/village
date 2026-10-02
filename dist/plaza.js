@@ -27,11 +27,11 @@ export function createPlaza({world,viewport,template,camera,enterMarket}){
    if(state.trial){const self=rows.find(p=>p.id===classroomData.me.id),pos=self?current(self):{x:-1,z:-12};if(greeting)localWaveUntil=clock()+4000;data={paused:false,visitors:[{id:classroomData.me.id,name:state.name,...pos,tx:destination?.x??self?.tx??pos.x,tz:destination?.z??self?.tz??pos.z,wave:clock()<localWaveUntil},{id:'practice-guide',name:'연습 친구',x:2,z:-13,tx:2,tz:-13,wave:false}]};}
    else data=await schoolFetch('/api/plaza',destination?{action:'move',...destination}:{action:greeting?'wave':'visit'},t);
    if(gen!==generation||!active()||t!==schoolToken){await leave(t);return}
-   const now=clock(),incoming=data.visitors.map(p=>({...p,received:now})),present=new Set(incoming.map(p=>p.id));for(const old of rows){if(present.has(old.id)||old.id===classroomData.me.id)continue;const until=old.awayUntil||now+15000;if(until>now){const pos=current(old);incoming.push({...old,...pos,tx:pos.x,tz:pos.z,received:now,wave:false,away:true,awayUntil:until})}}rows=incoming;lastOK=now;paused=data.paused;failed=false;joined=true;
+   const now=clock();rows=data.visitors.map(p=>({...p,received:now}));lastOK=now;paused=data.paused;failed=false;joined=true;
    // Render server-derived movement, not a separate client position.
-   for(const p of rows){const a=actors.get(p.id)||make(p);a.label.textContent=(p.id===classroomData.me.id?p.name+' · 나':state.trial&&p.id==='practice-guide'?'연습 친구':p.name)+(p.wave?' 👋':'')+(p.away?' · 자리 비움':'');a.label.classList.toggle('is-me',p.id===classroomData.me.id);a.label.classList.toggle('is-practice',state.trial&&p.id==='practice-guide');a.label.classList.toggle('away',!!p.away);}
+   for(const p of rows){const a=actors.get(p.id)||make(p);a.label.textContent=(p.id===classroomData.me.id?p.name+' · 나':state.trial&&p.id==='practice-guide'?'연습 친구':p.name)+(p.wave?' 👋':'')+(p.atMarket?' · 장터에 있어요':p.away?' · 자리 비움':'');a.label.classList.toggle('is-me',p.id===classroomData.me.id);a.label.classList.toggle('is-practice',!!state.trial&&p.id==='practice-guide');a.label.classList.toggle('away',!!p.away);}
    const ids=new Set(rows.map(p=>p.id));for(const [id,a]of actors){if(!ids.has(id)){removeActor(a);actors.delete(id)}}
-   status(state.trial?'혼자 체험 중 · 연습 친구와 이동을 연습해요':`같은 광장에 ${rows.filter(p=>!p.away).length}명 · 연결됨`);arrive();
+   const activeCount=rows.filter(p=>!p.away).length,awayCount=rows.filter(p=>p.away&&!p.atMarket).length;status(state.trial?'혼자 체험 중 · 연습 친구와 이동을 연습해요':`같은 광장에 ${activeCount}명${awayCount?` · 자리 비움 ${awayCount}명`:''} · 연결됨`);arrive();
   }catch(e){if(gen===generation){failed=true;gate=false;status(e.message||'연결을 다시 확인하고 있어요.');if(clock()-lastOK>15000)clear();}}
   finally{busy=false;if(active())timer=setTimeout(poll,1100+Math.random()*150);}
  }
