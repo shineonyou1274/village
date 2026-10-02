@@ -4,3 +4,4 @@ const root=process.cwd();await mkdir('dist/server',{recursive:true});await mkdir
 const version=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
 await writeFile('dist/client/version.txt',version+'\n');
 await writeFile('dist/client/version-check.js',(await readFile('dist/version-check.js','utf8')).replace('__APP_VERSION__',version));
+for(const html of ['index.html','campus.html'])await writeFile(path.join('dist/client',html),(await readFile(path.join('dist/client',html),'utf8')).replaceAll('__APP_VERSION__',version));

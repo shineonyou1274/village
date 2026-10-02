@@ -38,7 +38,9 @@ async function action(token, request) {return api('/api/action', {requestId:cryp
     assert(offer);
     await page.evaluate(() => refreshSchool());
     await action(buyerToken,{action:'accept',offer:offer.id});
+    const acceptedAt=Date.now();
     await page.locator('#toast').getByText(/님과 교환했어요 · 당근 1개 → 상추 1개/).waitFor({timeout:22000});
+    assert(Date.now()-acceptedAt<7000,'Farm trade notice should arrive on the faster school refresh');
     assert.equal(await page.evaluate(() => document.body.dataset.screen),'farm');
     assert.equal((await api('/api/state',null,sellerToken)).me.state.garden.stock[1],before.me.state.garden.stock[1]-1);
     console.log('PASS: seller receives trade notice while on farm');
