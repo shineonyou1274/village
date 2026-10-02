@@ -62,7 +62,7 @@ export function createMarketScene({onPeer,onSpot}){
  function resize(){if(!host||!renderer)return;const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);const span=12.8,aspect=w/h;camera.left=-span*aspect/2;camera.right=span*aspect/2;camera.top=span/2;camera.bottom=-span/2;camera.position.set(0,10.5,15.5);camera.lookAt(0,.4,-.2);camera.updateProjectionMatrix()}
  function project(point){const v=point.clone().project(camera);return {x:(v.x*.5+.5)*host.clientWidth,y:(-v.y*.5+.5)*host.clientHeight}}
  function placeLabels(){if(!host||!latest)return;
-  host.querySelectorAll('.market-stall').forEach((button,i)=>{const item=stalls[i];if(!item)return;const p=project(new THREE.Vector3(item.x,2.65,-1.8));button.style.left=p.x+'px';button.style.top=p.y+'px'});
+  host.querySelectorAll('.market-stall').forEach((button,i)=>{const item=stalls[i];if(!item)return;const p=project(new THREE.Vector3(item.x,2.65,-1.8)),half=button.offsetWidth/2;button.style.left=Math.max(half+4,Math.min(host.clientWidth-half-4,p.x))+'px';button.style.top=Math.max(24,Math.min(host.clientHeight-24,p.y))+'px'});
   for(const [id,a] of actors){const marker=id===latest.me.id?host.querySelector('#marketHero'):host.querySelector(`.market-visitor[data-market-peer="${CSS.escape(id)}"]`);if(!marker)continue;const p=project(a.group.position.clone().add(new THREE.Vector3(0,2.3,0)));marker.style.left=Math.max(45,Math.min(host.clientWidth-45,p.x))+'px';marker.style.top=Math.max(22,Math.min(host.clientHeight-22,p.y))+'px';marker.hidden=false}
  }
  function frame(now){requestAnimationFrame(frame);if(!renderer||!host||document.hidden||document.body.dataset.screen!=='market'||!host.isConnected)return;if(now-last<45)return;const dt=Math.min(.08,(now-last)/1000||.05);last=now;
@@ -80,7 +80,7 @@ export function createMarketScene({onPeer,onSpot}){
   const nextHost=data.root.querySelector('.market-plaza');if(!nextHost)return;if(!renderer)makeScene();host=nextHost;if(canvas.parentElement!==host)host.prepend(canvas);host.classList.add('market-3d');host.dataset.asset='ready';
   const count=data.root.querySelectorAll('.market-stall').length;if(count!==previousCount)rebuildStalls(count);
   stalls.forEach((stall,i)=>{stall.peer=data.shown[i]?.id||null});
-  const mobile=host.clientWidth<650,rows=data.visitors.filter(row=>row.id===data.me.id||data.visitors.findIndex(v=>v.id===row.id)<(mobile?5:9));
+  const mobile=host.clientWidth<850,rows=data.visitors.filter(row=>row.id===data.me.id||data.visitors.findIndex(v=>v.id===row.id)<(mobile?5:9));
   if(!rows.some(row=>row.id===data.me.id))rows.unshift({id:data.me.id,spot:data.spot});
   if(data.trial){const guide=data.shown.find(peer=>peer.id!==data.me.id&&!rows.some(row=>row.id===peer.id));if(guide)rows.push({id:guide.id,spot:9,practice:true})}
   const ids=new Set(rows.map(row=>row.id));for(const id of actors.keys())if(!ids.has(id))removeActor(id);

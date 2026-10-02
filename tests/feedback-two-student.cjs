@@ -44,6 +44,11 @@ const action = (token, name, rest = {}) => api('/api/action', {action: name, req
     await newcomer.locator('#studentCode').fill('111111111111111111111111');
     await newcomer.locator('#schoolEntry button[type="submit"]').click();
     await newcomer.locator('#entryError').getByText(/입장 코드가 맞지 않아요/).waitFor();
+    await newcomer.locator('#roomCode').fill('WRONG1');
+    await newcomer.locator('#studentCode').fill(first);
+    await newcomer.locator('#schoolEntry button[type="submit"]').click();
+    await newcomer.locator('#entryError').getByText(/학급 코드를 확인해 주세요/).waitFor();
+    await newcomer.locator('#roomCode').fill(room.roomCode);
     await newcomer.locator('#studentCode').fill(first.slice(0, 12) + ' ' + first.slice(12));
     await newcomer.locator('#schoolEntry button[type="submit"]').click();
     await newcomer.waitForFunction(() => window.classroomActive === true);
@@ -114,7 +119,15 @@ const action = (token, name, rest = {}) => api('/api/action', {action: name, req
     const [sellerState, buyerState] = await Promise.all([api('/api/state', null, first), api('/api/state', null, second)]);
     assert.equal(sellerState.me.state.stock[1], 1);
     assert.equal(buyerState.me.state.stock[0], 2);
-    await seller.locator('#toast').getByText(/과 물건을 교환했어요/).waitFor({timeout: 10000});
+    await seller.locator('#toast').getByText(/님과 교환했어요/).waitFor({timeout: 10000});
+    await seller.locator('#newSchoolOffer').click();
+    const sellerAfterTrade = await api('/api/state', null, first);
+    const changed = new DatabaseSync(dbPath);
+    changed.prepare("UPDATE players SET state=json_set(state,'$.stock[0]',?),version=version+1 WHERE id=?").run(sellerAfterTrade.me.state.stock[0]+1,sellerAfterTrade.me.id);
+    changed.close();
+    await seller.evaluate(() => refreshSchool());
+    assert.match(await seller.locator('#giveItem option[value="0"]').innerText(), new RegExp(`보관 ${sellerAfterTrade.me.state.stock[0]+1}개`), 'Open offer dialog must refresh stock');
+    await seller.locator('#dialog [data-close]').click();
     const presence = await api('/api/market-presence', null, second);
     assert.equal(new Set(presence.visitors.map(visitor => visitor.spot)).size, 2, 'Two visitors need distinct market positions');
     await buyer.setViewportSize({width: 390, height: 844});

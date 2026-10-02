@@ -14,7 +14,7 @@
 - Movement is bounded to the plaza and interpolated at server-defined speed (3 world units/second).
 - One non-overlapping request loop per visible plaza, approximately 1.1–1.25 seconds plus response time. No animation-frame network calls.
 - Route exit/hidden/page exit sends leave; 15-second TTL removes abandoned sessions. Errors are displayed; stale avatars are removed and reconnection retries automatically.
-- One identity has one presence record; simultaneous tabs for the same student represent the same character. Use separate student codes to test a meeting.
+- One identity has one presence record. Classroom rule: open each student account in one browser tab/device at a time and use separate student codes to test a meeting. The current server does not reject a second tab with the same code; two active tabs can overwrite that identity's location. A future session-ownership change must be designed and tested separately before claiming automatic single-device enforcement.
 - Greeting allowlist, five-second cooldown, teacher pause and class boundaries enforced on server.
 
 ## Validation
