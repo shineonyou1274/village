@@ -5,7 +5,12 @@
  document.querySelector('header').after(bar);
  const note=t=>document.querySelector('#studentNavigationStatus').textContent=t;
  let leaving=false;
- window.logoutStudent=async()=>{
+ window.logoutStudent=async(confirmed=false)=>{
+  if(!confirmed){
+   let dialog=document.querySelector('#studentSwitchConfirm');
+   if(!dialog){dialog=document.createElement('dialog');dialog.id='studentSwitchConfirm';dialog.className='student-switch-confirm';dialog.innerHTML='<h2>학생을 바꿀까요?</h2><p>지금까지 한 농사와 공부 기록은 그대로 남아요. 이 기기에서는 지난 학생 계정으로 코드 없이 다시 들어올 수 있어요.</p><div class="dialog-actions"><button type="button" data-stay>계속하기</button><button type="button" class="primary" data-switch>나가서 학생 바꾸기</button></div>';document.body.append(dialog);dialog.querySelector('[data-stay]').onclick=()=>dialog.close();dialog.querySelector('[data-switch]').onclick=()=>{dialog.close();window.logoutStudent(true)}}
+   if(!dialog.open)dialog.showModal();return;
+  }
   if(leaving)return;
   if((typeof schoolPending!=='undefined'&&schoolPending)||(typeof busy!=='undefined'&&busy)){note('지금 작업을 저장 중이에요. 잠시 뒤 학생 바꾸기를 다시 눌러 주세요.');return}
   leaving=true;document.querySelector('#studentLogout').disabled=true;const visibleSwitch=document.querySelector('#compactStudentSwitch');if(visibleSwitch)visibleSwitch.disabled=true;

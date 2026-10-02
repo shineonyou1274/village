@@ -17,6 +17,14 @@
 .entry-footer{text-align:center;margin:12px 0 0;font-size:13px}
 .entry-footer a{color:#285740;text-decoration:underline;text-underline-offset:3px}
 #localDemo:not([hidden]){width:100%;background:#e5ede6;color:#285740}
+.remembered-student{display:grid;gap:9px;padding:16px;margin:12px 0;background:#e7f3ec;border:2px solid #78ad8e;border-radius:16px}
+.remembered-student p{margin:0;font-size:18px;font-weight:700;color:#204e3d}
+.remembered-student button{min-height:44px}
+.remembered-student .quiet{justify-self:start;font-size:13px;min-height:36px}
+.student-switch-confirm{max-width:min(440px,calc(100vw - 28px));padding:24px;border:1px solid #b9d3c2;border-radius:18px;box-shadow:0 14px 45px #173b2a55;color:#244b39}
+.student-switch-confirm::backdrop{background:#122c20aa}
+.student-switch-confirm h2{margin:0 0 10px}.student-switch-confirm p{line-height:1.6}
+.student-switch-confirm .dialog-actions{display:flex;gap:10px;flex-wrap:wrap}.student-switch-confirm button{min-height:44px;flex:1}
 @media(max-width:480px){#dialog:has(.class-entry){padding:18px;width:calc(100% - 24px)}.trial-entry{align-items:stretch;flex-direction:column;gap:8px}.trial-entry button{width:100%}}
 
 body[data-trial="true"] .first-steps{display:none}
