@@ -7,9 +7,22 @@
  let leaving=false;
  window.logoutStudent=async()=>{
   if(leaving)return;
-  if((typeof schoolPending!=='undefined'&&schoolPending)||(typeof busy!=='undefined'&&busy)||sessionStorage.getItem('village-pending-command')){note('저장 확인 중이에요. 잠시 뒤 다시 눌러 주세요.');return}
-  leaving=true;document.querySelector('#studentLogout').disabled=true;note('공부 상태를 저장하고 나가고 있어요…');
+  if((typeof schoolPending!=='undefined'&&schoolPending)||(typeof busy!=='undefined'&&busy)){note('지금 작업을 저장 중이에요. 잠시 뒤 학생 바꾸기를 다시 눌러 주세요.');return}
+  leaving=true;document.querySelector('#studentLogout').disabled=true;const visibleSwitch=document.querySelector('#compactStudentSwitch');if(visibleSwitch)visibleSwitch.disabled=true;
   const auth=sessionStorage.getItem('village-student-token');
+  const pending=sessionStorage.getItem('village-pending-command');
+  if(auth&&pending){
+   note('이전 작업의 저장 결과를 확인하고 있어요…');
+   try{
+    const response=await fetch('/api/action',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+auth},body:pending,signal:AbortSignal.timeout(8000)});
+    if(response.ok||response.status<500)sessionStorage.removeItem('village-pending-command');
+    else throw Error('server');
+   }catch{
+    note('이전 작업의 저장을 확인하지 못했어요. 연결을 확인한 뒤 다시 눌러 주세요.');
+    leaving=false;document.querySelector('#studentLogout').disabled=false;if(visibleSwitch)visibleSwitch.disabled=false;return;
+   }
+  }
+  note('공부 상태를 저장하고 나가고 있어요…');
   try{
    if(auth){
     const call=async(body)=>{const r=await fetch(body?'/api/campus/study':'/api/campus',{method:body?'POST':'GET',headers:{'content-type':'application/json',authorization:'Bearer '+auth},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error('connection');return r.json()};
