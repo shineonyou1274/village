@@ -35,14 +35,14 @@ try{
  assert((await teacher.locator('.student-entry-card img').first().getAttribute('src')).startsWith('data:image/gif;base64,'));
  await teacher.screenshot({path:'test-output/student-entry-links/teacher.png'});
  const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});
- await context.addInitScript(({token,roomCode,name})=>localStorage.setItem('village-remembered-student-v1',JSON.stringify({room:roomCode,name,token})),{token:room.students[1].code,roomCode:room.roomCode,name:room.students[1].name});
+ await context.addInitScript(({token,roomCode,name})=>{localStorage.setItem('village-remember-device-v1','yes');localStorage.setItem('village-remembered-student-v1',JSON.stringify({room:roomCode,name,token}))},{token:room.students[1].code,roomCode:room.roomCode,name:room.students[1].name});
  const student=await context.newPage();student.on('pageerror',e=>errors.push(e.stack));
  await student.goto(base+'/?entry=1#join='+links[0].token);
  await student.waitForFunction(()=>window.classroomActive&&window.classroomData?.me?.accountName==='학생 001');
  assert.equal(new URL(student.url()).hash,'#farm','The bearer link must be removed from the address bar');
- assert.equal(await student.evaluate(()=>StudentMemory.read()?.name),room.students[0].name,'The new student must replace the previous device memory');
+ assert.equal(await student.evaluate(()=>StudentMemory.read()),null,'A link must not silently remember an account on a shared device');
  await student.reload();await student.waitForFunction(()=>window.classroomActive&&window.classroomData?.me?.accountName==='학생 001');
  assert.equal((await request('/api/state',{token:room.students[0].code})).data.me.id,await student.evaluate(()=>classroomData.me.id),'The original code must still open the same record');
  await context.close();await teacher.close();assert.deepEqual(errors,[]);
- console.log('PASS: stable private student links, teacher QR, old code, one-tap entry, account memory, reload and no leaked URL token');
+ console.log('PASS: stable private student links, teacher QR, old code, one-tap entry, shared-device privacy, reload and no leaked URL token');
 }finally{await browser.close()}

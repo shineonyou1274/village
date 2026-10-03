@@ -47,6 +47,8 @@ try{
  await sellerPage.locator(`.market-visitor[data-market-peer="${recipientId}"]`).click();
  const wideCardBottom=await sellerPage.locator('.market-detail').evaluate(node=>node.getBoundingClientRect().bottom);assert(wideCardBottom<=844,`768px friend card should fit without scrolling, bottom=${wideCardBottom}`);
  await sellerPage.locator('.market-detail [data-market-greet="wave"]').click();
+ await sellerPage.locator('#marketHero .market-greeting').waitFor({timeout:10000});
+ await sellerPage.locator('#marketHero .market-greeting').waitFor({state:'detached',timeout:4000});
  await recipientPage.waitForFunction(id=>!!document.querySelector(`.market-visitor[data-market-peer="${id}"] .market-greeting`),sellerId,{timeout:10000});
  assert.equal(await observerPage.locator(`.market-visitor[data-market-peer="${sellerId}"] .market-greeting`).count(),0,'Greeting should appear only to the selected friend');
  assert.match(await recipientPage.locator(`.market-visitor[data-market-peer="${sellerId}"] .market-greeting`).evaluate(node=>getComputedStyle(node).animationName),/marketGreeting/);

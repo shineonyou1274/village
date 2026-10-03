@@ -8,7 +8,7 @@
  window.logoutStudent=async(confirmed=false)=>{
   if(!confirmed){
    let dialog=document.querySelector('#studentSwitchConfirm');
-   if(!dialog){dialog=document.createElement('dialog');dialog.id='studentSwitchConfirm';dialog.className='student-switch-confirm';dialog.innerHTML='<h2>학생을 바꿀까요?</h2><p>지금까지 한 농사와 공부 기록은 그대로 남아요. 이 기기에서는 지난 학생 계정으로 코드 없이 다시 들어올 수 있어요.</p><div class="dialog-actions"><button type="button" data-stay>계속하기</button><button type="button" class="primary" data-switch>나가서 학생 바꾸기</button></div>';document.body.append(dialog);dialog.querySelector('[data-stay]').onclick=()=>dialog.close();dialog.querySelector('[data-switch]').onclick=()=>{dialog.close();window.logoutStudent(true)}}
+   if(!dialog){dialog=document.createElement('dialog');dialog.id='studentSwitchConfirm';dialog.className='student-switch-confirm';dialog.innerHTML='<h2>학생을 바꿀까요?</h2><p>지금까지 한 농사와 공부 기록은 그대로 남아요. 입장 화면에서 지난 학생 계정을 직접 고를 수 있어요. 공용 기기라면 내 코드를 사용하세요.</p><div class="dialog-actions"><button type="button" data-stay>계속하기</button><button type="button" class="primary" data-switch>나가서 학생 바꾸기</button></div>';document.body.append(dialog);dialog.querySelector('[data-stay]').onclick=()=>dialog.close();dialog.querySelector('[data-switch]').onclick=()=>{dialog.close();window.logoutStudent(true)}}
    if(!dialog.open)dialog.showModal();return;
   }
   if(leaving)return;

@@ -38,7 +38,7 @@
   if(state.trial){const guide=shown.find(p=>!visitors.some(v=>v.id===p.id));if(guide){const marker=document.createElement('button');marker.className='market-visitor market-practice-visitor';marker.dataset.marketPeer=guide.id;marker.setAttribute('aria-label','연습 친구에게 다가가기');marker.innerHTML='<span class="visitor-name">연습 친구</span>';root.querySelector('.market-plaza').append(marker)}}
   if(previousHero)$('#marketHero').replaceWith(previousHero);
   if(previousDetail&&lastDetailKey===detailKey)root.querySelector('.market-detail').replaceWith(previousDetail);lastDetailKey=detailKey;
-  const selfGreeting=visitors.find(p=>p.id===d.me.id);if(selfGreeting?.greeting&&selfGreeting.greeted!==lastSelfGreeting){lastSelfGreeting=selfGreeting.greeted;$('#marketHero .market-greeting')?.remove();const bubble=document.createElement('span');bubble.className='market-greeting';bubble.textContent=greetings[selfGreeting.greeting];$('#marketHero').append(bubble)}
+  const selfGreeting=visitors.find(p=>p.id===d.me.id);if(selfGreeting?.greeting&&selfGreeting.greeted!==lastSelfGreeting){lastSelfGreeting=selfGreeting.greeted;$('#marketHero .market-greeting')?.remove();const bubble=document.createElement('span');bubble.className='market-greeting';bubble.textContent=greetings[selfGreeting.greeting];$('#marketHero').append(bubble);setTimeout(()=>bubble.remove(),2000)}
   $('#newSchoolOffer').onclick=newSchoolOffer;
   root.onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.hasAttribute('data-market-return')){window.villageNavigate('village');return}if(b.dataset.marketPeer){e.preventDefault();selectPeer(b.dataset.marketPeer,b.classList.contains('market-visitor')?'actor':'stall');return}
    if(b.hasAttribute('data-market-mine')){selected=d.me.id;draw()}
