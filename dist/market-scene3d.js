@@ -11,7 +11,7 @@ export function createMarketScene({onPeer,onSpot}){
  let stalls=[],actors=new Map(),last=0,ready=false,failed=false,previousCount=0;
  const palette=[0x659ac6,0xc77b8f,0x89a55b,0xeeb45c,0x9b86bd,0x57aaa0];
  const color=id=>palette[Array.from(id).reduce((n,c)=>n+c.charCodeAt(0),0)%palette.length];
- const spotPosition=(spot,mobile)=>new THREE.Vector3((spot%6-2.5)*(mobile?1.4:3.2),.1,1.15+Math.floor(spot/6)*1.15);
+ const spotPosition=(spot,mobile)=>new THREE.Vector3((spot%6-2.5)*(mobile?3:3.2),.1,1.15+Math.floor(spot/6)*1.15);
  const promise=Promise.all([...names.map(name=>load(`./assets/market/${name}.glb`)),load('./assets/avatars/student-base.glb')]).then(rows=>{
   assets=new Map(names.map((name,i)=>[name,rows[i]]));avatar=rows.at(-1);
   if(!['idle','walk','wave'].every(name=>avatar.animations.some(clip=>clip.name===name)))throw Error('Student avatar animation missing');
@@ -42,7 +42,7 @@ export function createMarketScene({onPeer,onSpot}){
  function place(name,x,z,rotation=0){const model=assets.get(name).scene.clone(true);model.position.set(x,0,z);model.rotation.y=rotation;scene.add(model);return model}
  function rebuildStalls(count){
   for(const stall of stalls){scene.remove(stall.model);scene.remove(stall.crate)}stalls=[];
-  const xs=count===3?[-3.25,0,3.25]:[-12.5,-7.5,-2.5,2.5,7.5,12.5];
+  const xs=count===3?[-4,0,4]:[-12.5,-7.5,-2.5,2.5,7.5,12.5];
   xs.forEach((x,i)=>{
    const model=place('market-stall',x,-1.8),crate=place('produce-crate',x+.85,-.72);
    const colors=[0xd99b78,0x7fb4a3,0xe7c77a,0xc49aba,0xc97e68,0x88b3a5];
@@ -62,8 +62,9 @@ export function createMarketScene({onPeer,onSpot}){
  function resize(){if(!host||!renderer)return;const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);const span=12.8,aspect=w/h;camera.left=-span*aspect/2;camera.right=span*aspect/2;camera.top=span/2;camera.bottom=-span/2;camera.position.set(0,10.5,15.5);camera.lookAt(0,.4,-.2);camera.updateProjectionMatrix()}
  function project(point){const v=point.clone().project(camera);return {x:(v.x*.5+.5)*host.clientWidth,y:(-v.y*.5+.5)*host.clientHeight}}
  function placeLabels(){if(!host||!latest)return;
-  host.querySelectorAll('.market-stall').forEach((button,i)=>{const item=stalls[i];if(!item)return;const p=project(new THREE.Vector3(item.x,2.65,-1.8)),half=button.offsetWidth/2;button.style.left=Math.max(half+4,Math.min(host.clientWidth-half-4,p.x))+'px';button.style.top=Math.max(24,Math.min(host.clientHeight-24,p.y))+'px'});
-  for(const [id,a] of actors){const marker=id===latest.me.id?host.querySelector('#marketHero'):host.querySelector(`.market-visitor[data-market-peer="${CSS.escape(id)}"]`);if(!marker)continue;const p=project(a.group.position.clone().add(new THREE.Vector3(0,2.3,0)));marker.style.left=Math.max(45,Math.min(host.clientWidth-45,p.x))+'px';marker.style.top=Math.max(22,Math.min(host.clientHeight-22,p.y))+'px';marker.hidden=false}
+  host.querySelectorAll('.market-stall').forEach((button,i)=>{const item=stalls[i];if(!item)return;const p=project(new THREE.Vector3(item.x,2.65,-1.8)),half=button.offsetWidth/2;button.style.left=Math.max(half+4,Math.min(host.clientWidth-half-4,p.x))+'px';button.style.top='58px'});
+  const labels=[];for(const [id,a] of actors){const marker=id===latest.me.id?host.querySelector('#marketHero'):host.querySelector(`.market-visitor[data-market-peer="${CSS.escape(id)}"]`);if(marker)labels.push({marker,p:project(a.group.position.clone().add(new THREE.Vector3(0,2.3,0)))})}
+  const hostRect=host.getBoundingClientRect(),placed=[...host.querySelectorAll('.market-stall:not(.vacant)')].map(button=>{const box=button.getBoundingClientRect();return {left:box.left-hostRect.left,right:box.right-hostRect.left,top:box.top-hostRect.top,bottom:box.bottom-hostRect.top}});for(const {marker,p} of labels){const w=marker.offsetWidth||78,h=marker.offsetHeight||24,baseX=Math.max(w/2+4,Math.min(host.clientWidth-w/2-4,p.x)),baseY=Math.max(h+4,Math.min(host.clientHeight-24,p.y));let choice=null;for(const dx of [0,-w/2-4,w/2+4,-w-8,w+8]){for(const dy of [0,h+5,-h-5]){const x=Math.max(w/2+4,Math.min(host.clientWidth-w/2-4,baseX+dx)),y=Math.max(h+4,Math.min(host.clientHeight-24,baseY+dy)),box={left:x-w/2,right:x+w/2,top:y-h,bottom:y};if(placed.every(other=>box.right+3<other.left||box.left>other.right+3||box.bottom+3<other.top||box.top>other.bottom+3)){choice={x,y,box};break}}if(choice)break}if(!choice){const x=baseX,y=baseY;choice={x,y,box:{left:x-w/2,right:x+w/2,top:y-h,bottom:y}}}placed.push(choice.box);marker.style.left=choice.x+'px';marker.style.top=choice.y+'px';marker.hidden=false}
  }
  function frame(now){requestAnimationFrame(frame);if(!renderer||!host||document.hidden||document.body.dataset.screen!=='market'||!host.isConnected)return;if(now-last<45)return;const dt=Math.min(.08,(now-last)/1000||.05);last=now;
   if(canvas.parentElement!==host)host.prepend(canvas);
@@ -73,7 +74,7 @@ export function createMarketScene({onPeer,onSpot}){
  }
  function clickCanvas(event){if(!latest||!host)return;const rect=canvas.getBoundingClientRect(),pointer=new THREE.Vector2((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1),ray=new THREE.Raycaster();ray.setFromCamera(pointer,camera);
   const targets=[...stalls.map(s=>s.model),...actors.values().map(a=>a.group)],hits=ray.intersectObjects(targets,true);
-  for(const hit of hits){let node=hit.object;while(node&&!stalls.some(s=>s.model===node)&&![...actors.values()].some(a=>a.group===node))node=node.parent;if(!node)continue;const stall=stalls.find(s=>s.model===node);if(stall?.peer){onPeer(stall.peer);return}const actor=[...actors.entries()].find(([,a])=>a.group===node);if(actor&&actor[0]!==latest.me.id){onPeer(actor[0]);return}}
+  for(const hit of hits){let node=hit.object;while(node&&!stalls.some(s=>s.model===node)&&![...actors.values()].some(a=>a.group===node))node=node.parent;if(!node)continue;const actor=[...actors.entries()].find(([,a])=>a.group===node);if(actor&&actor[0]!==latest.me.id){onPeer(actor[0],'actor');return}const stall=stalls.find(s=>s.model===node);if(stall?.peer){onPeer(stall.peer,'stall');return}}
   const ground=new THREE.Plane(new THREE.Vector3(0,1,0),0),point=new THREE.Vector3();if(!ray.ray.intersectPlane(ground,point))return;const mobile=host.clientWidth<650;let closest=0,distance=Infinity;for(let i=0;i<12;i++){const p=spotPosition(i,mobile),d=p.distanceToSquared(point);if(d<distance){closest=i;distance=d}}onSpot(closest);
  }
  function update(data){latest=data;if(failed||!ready||!data?.root||document.body.dataset.screen!=='market')return;

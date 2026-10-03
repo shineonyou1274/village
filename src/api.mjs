@@ -83,15 +83,17 @@ if(req.method==='POST'){
    await db.prepare('INSERT INTO market_visitors(player,room,seen,spot) VALUES(?,?,?,?) ON CONFLICT(player) DO UPDATE SET seen=excluded.seen,spot=excluded.spot').bind(a.player.id,a.room.id,now,spot).run();
   }else{
    if(!['wave','thanks','together'].includes(b.greeting))err('준비된 인사를 골라 주세요.');
+   const target=String(b.target||'');
+   if(target){if(target===a.player.id)err('친구를 선택해 주세요.');const friend=await db.prepare('SELECT id FROM players WHERE id=? AND room=?').bind(target,a.room.id).first();if(!friend)err('같은 반 친구를 선택해 주세요.',404)}
    const previous=await db.prepare('SELECT seen,greeted FROM market_visitors WHERE player=?').bind(a.player.id).first();
    if(!previous||previous.seen<now-35000)err('장터에 먼저 들어와 주세요.',409);
    if(previous.greeted>now-5000)err('인사는 5초 뒤에 다시 보낼 수 있어요.',429);
-   await db.prepare('UPDATE market_visitors SET greeting=?,greeted=?,seen=? WHERE player=?').bind(b.greeting,now,now,a.player.id).run();
+   await db.prepare('UPDATE market_visitors SET greeting=?,greeted=?,seen=? WHERE player=?').bind(target?`${b.greeting}:${target}`:b.greeting,now,now,a.player.id).run();
   }
  }
 }else if(req.method!=='GET')err('지원하지 않는 요청입니다.',405);
 const rows=await db.prepare('SELECT v.player,v.spot,v.greeting,v.greeted,p.name,p.state FROM market_visitors v JOIN players p ON p.id=v.player WHERE v.room=? AND v.seen>? ORDER BY v.player').bind(a.room.id,now-35000).all();
-return json({me:a.player.id,serverTime:now,visitors:rows.results.map(p=>({id:p.player,name:JSON.parse(p.state).name||p.name,spot:p.spot,greeting:p.greeted>now-12000?p.greeting:''}))});
+return json({me:a.player.id,serverTime:now,visitors:rows.results.map(p=>{const [greeting,target]=String(p.greeting||'').split(':');const visible=p.greeted>now-12000&&(!target||target===a.player.id||p.player===a.player.id);return {id:p.player,name:JSON.parse(p.state).name||p.name,spot:p.spot,greeting:visible?greeting:'',greeted:visible?p.greeted:0}})});
 }
 if(u.pathname==='/api/community'&&req.method==='GET'){
 const rows=await db.prepare(`WITH history AS (
