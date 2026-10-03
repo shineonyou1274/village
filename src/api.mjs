@@ -90,21 +90,21 @@ if(req.method==='POST'){
   if(b.action==='visit'){
    let spot=int(b.spot,0,11);
    const previous=await db.prepare('SELECT spot FROM market_visitors WHERE player=?').bind(a.player.id).first();
-   if(!previous){const rank=await db.prepare('SELECT count(*) n FROM players WHERE room=? AND id<?').bind(a.room.id,a.player.id).first();const n=rank.n%12;spot=(8+(n%4)*3+Math.floor(n/4))%12;const taken=await db.prepare('SELECT spot FROM market_visitors WHERE room=? AND seen>?').bind(a.room.id,now-35000).all();const used=new Set(taken.results.map(row=>row.spot));if(used.has(spot))for(const offset of [3,6,9,1,2,4,5,7,8,10,11]){const candidate=(spot+offset)%12;if(!used.has(candidate)){spot=candidate;break}}}
-   await db.prepare('INSERT INTO market_visitors(player,room,seen,spot) VALUES(?,?,?,?) ON CONFLICT(player) DO UPDATE SET seen=excluded.seen,spot=excluded.spot').bind(a.player.id,a.room.id,now,spot).run();
+   if(!previous){const rank=await db.prepare('SELECT count(*) n FROM players WHERE room=? AND id<?').bind(a.room.id,a.player.id).first();const n=rank.n%12;spot=(8+(n%4)*3+Math.floor(n/4))%12;const taken=await db.prepare('SELECT spot FROM market_visitors WHERE room=? AND seen>?').bind(a.room.id,Date.now()-90000).all();const used=new Set(taken.results.map(row=>row.spot));if(used.has(spot))for(const offset of [3,6,9,1,2,4,5,7,8,10,11]){const candidate=(spot+offset)%12;if(!used.has(candidate)){spot=candidate;break}}}
+   await db.prepare('INSERT INTO market_visitors(player,room,seen,spot) VALUES(?,?,?,?) ON CONFLICT(player) DO UPDATE SET seen=excluded.seen,spot=excluded.spot').bind(a.player.id,a.room.id,Date.now(),spot).run();
   }else{
    if(!['wave','thanks','together'].includes(b.greeting))err('준비된 인사를 골라 주세요.');
    const target=String(b.target||'');
    if(target){if(target===a.player.id)err('친구를 선택해 주세요.');const friend=await db.prepare('SELECT id FROM players WHERE id=? AND room=?').bind(target,a.room.id).first();if(!friend)err('같은 반 친구를 선택해 주세요.',404)}
    const previous=await db.prepare('SELECT seen,greeted FROM market_visitors WHERE player=?').bind(a.player.id).first();
-   if(!previous||previous.seen<now-35000)err('장터에 먼저 들어와 주세요.',409);
+   if(!previous||previous.seen<now-90000)err('장터에 먼저 들어와 주세요.',409);
    if(previous.greeted>now-5000)err('인사는 5초 뒤에 다시 보낼 수 있어요.',429);
    await db.prepare('UPDATE market_visitors SET greeting=?,greeted=?,seen=? WHERE player=?').bind(target?`${b.greeting}:${target}`:b.greeting,now,now,a.player.id).run();
   }
  }
 }else if(req.method!=='GET')err('지원하지 않는 요청입니다.',405);
-const rows=await db.prepare('SELECT v.player,v.spot,v.greeting,v.greeted,p.name,p.state FROM market_visitors v JOIN players p ON p.id=v.player WHERE v.room=? AND v.seen>? ORDER BY v.player').bind(a.room.id,now-35000).all();
-return json({me:a.player.id,serverTime:now,visitors:rows.results.map(p=>{const [greeting,target]=String(p.greeting||'').split(':');const visible=p.greeted>now-12000&&(!target||target===a.player.id||p.player===a.player.id);return {id:p.player,name:JSON.parse(p.state).name||p.name,spot:p.spot,greeting:visible?greeting:'',greeted:visible?p.greeted:0}})});
+const readNow=Date.now(),rows=await db.prepare('SELECT v.player,v.spot,v.greeting,v.greeted,p.name,p.state FROM market_visitors v JOIN players p ON p.id=v.player WHERE v.room=? AND v.seen>? ORDER BY v.player').bind(a.room.id,readNow-90000).all();
+return json({me:a.player.id,serverTime:readNow,visitors:rows.results.map(p=>{const [greeting,target]=String(p.greeting||'').split(':');const visible=p.greeted>readNow-12000&&(!target||target===a.player.id||p.player===a.player.id);return {id:p.player,name:JSON.parse(p.state).name||p.name,spot:p.spot,greeting:visible?greeting:'',greeted:visible?p.greeted:0}})});
 }
 if(u.pathname==='/api/community'&&req.method==='GET'){
 const rows=await db.prepare(`WITH history AS (

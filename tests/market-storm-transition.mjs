@@ -25,7 +25,7 @@ try{
   await page.getByRole('button',{name:'우리 반 들어가기'}).click();
   const loading=page.locator('.market-plaza.market-loading');
   await loading.waitFor({timeout:10000});
-  const first=await loading.evaluate(el=>({background:getComputedStyle(el).backgroundColor,message:getComputedStyle(el.querySelector('.market-loading-message')).display,flat:getComputedStyle(el.querySelector('.market-person')).visibility}));
+  const first=await loading.evaluate(el=>({background:getComputedStyle(el).backgroundColor,message:getComputedStyle(el.querySelector('.market-loading-message')).display,flat:el.querySelector('.market-person')?getComputedStyle(el.querySelector('.market-person')).visibility:'hidden'}));
   assert.equal(first.background,'rgb(132, 152, 162)','Storm loading view must use the storm sky');
   assert.notEqual(first.message,'none','Loading notice must be visible');
   assert.equal(first.flat,'hidden','Inaccurate flat avatars must not flash while 3D loads');

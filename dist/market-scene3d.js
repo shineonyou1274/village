@@ -85,9 +85,10 @@ export function createMarketScene({onPeer,onSpot}){
   const nextHost=data.root.querySelector('.market-plaza');if(!nextHost)return;if(!renderer)makeScene();host=nextHost;if(canvas.parentElement!==host)host.prepend(canvas);host.classList.add('market-3d');host.dataset.asset='ready';
   const count=data.root.querySelectorAll('.market-stall').length;if(count!==previousCount)rebuildStalls(count);
   stalls.forEach((stall,i)=>{stall.peer=data.shown[i]?.id||null});
+  host.dataset.stallOwners=JSON.stringify(stalls.map(stall=>stall.peer));
   const mobile=host.clientWidth<850,rows=data.visitors.filter(row=>row.id===data.me.id||data.visitors.findIndex(v=>v.id===row.id)<(mobile?5:9));
   if(!rows.some(row=>row.id===data.me.id))rows.unshift({id:data.me.id,spot:data.spot});
-  if(data.trial){const guide=data.shown.find(peer=>peer.id!==data.me.id&&!rows.some(row=>row.id===peer.id));if(guide)rows.push({id:guide.id,spot:9,practice:true})}
+  if(data.trial){const guide=data.shown.find(peer=>peer.id&&peer.id!==data.me.id&&!rows.some(row=>row.id===peer.id));if(guide)rows.push({id:guide.id,spot:9,practice:true})}
   const ids=new Set(rows.map(row=>row.id));for(const id of actors.keys())if(!ids.has(id))removeActor(id);
   for(const row of rows){const a=actors.get(row.id)||makeActor(row);a.target.copy(spotPosition(row.id===data.me.id?data.spot:row.spot,mobile));if(!a.group.userData.placed){a.group.position.copy(a.target);a.group.userData.placed=true}a.waving=row.greeting==='wave';for(const material of a.changed.values()){material.transparent=!!row.away;material.opacity=row.away?.38:1;material.depthWrite=!row.away}}
   host.dataset.actors=String(actors.size);host.dataset.stalls=String(stalls.length);syncWeather(data);resize();placeLabels();
