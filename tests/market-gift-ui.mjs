@@ -27,6 +27,11 @@ try{
  await recipientPage.waitForFunction(()=>document.querySelector('.market-count')?.textContent.includes('3명'),null,{timeout:25000});
  assert.equal(await recipientPage.locator('.market-visitor:not(.market-practice-visitor)').count(),2,'Both classmates must appear locally beside the recipient');
  assert.equal(await recipientPage.locator('#marketHero').count(),1,'The recipient avatar must also appear');
+ assert.equal(await recipientPage.locator('.market-stall').last().innerText().then(text=>text.includes('내 가판대')),true,'Own stand needs a visible label');
+ const standOrder=await recipientPage.locator('.market-stall[data-market-peer]').evaluateAll(nodes=>nodes.map(node=>node.dataset.marketPeer));
+ await recipientPage.reload();
+ await recipientPage.waitForFunction(()=>document.querySelector('.market-count')?.textContent.includes('3명'),null,{timeout:25000});
+ assert.deepEqual(await recipientPage.locator('.market-stall[data-market-peer]').evaluateAll(nodes=>nodes.map(node=>node.dataset.marketPeer)),standOrder,'Refreshing must not swap stand positions');
  await recipientPage.locator('#newSchoolOffer').click();
  assert.match(await recipientPage.locator('#dialog').innerText(),/내 농장에서 상추를 수확한 뒤 다시 와 주세요/);
  assert.equal(await recipientPage.locator('#postSchoolOffer').isEnabled(),false);

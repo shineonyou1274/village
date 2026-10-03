@@ -36,6 +36,8 @@ try{
  await page.locator('#farmRepair').click();
  await page.locator('#dialog [data-answer="0"]').click();
  await page.locator('#feedback').filter({hasText:'감전'}).waitFor();
+ const safetyAlerts=await page.locator('[role="status"],[role="alert"]').evaluateAll(nodes=>nodes.filter(node=>node.getClientRects().length&&/감전|안전한 대응/.test(node.textContent||'')).map(node=>({id:node.id,className:node.className,text:node.textContent.trim()})));
+ assert.equal(safetyAlerts.length,1,'The wrong-answer explanation must be announced in one live region: '+JSON.stringify(safetyAlerts));
  await page.locator('#dialog [data-answer="1"]').click();
  await page.locator('#compactWeather').filter({hasText:'내 밭 복구 완료'}).waitFor();
  console.log('PASS: storm repair explains wrong answer, confirms recovery, and weather/price panels stay separate');
