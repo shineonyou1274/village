@@ -22,7 +22,9 @@ try{
  await page.locator('#startClassStory').click();
  await page.locator('#storyGoalParticipants').waitFor();
  assert.match(await page.locator('#teacherStory').innerText(),/2명/);
+ assert.match(await page.locator('#teacherStory').innerText(),/등록 학생 16명/);
  await page.locator('#storyGoalParticipants').fill('3');
+ assert.match(await page.locator('#storyGoalPreview').innerText(),/직업 미션마다 1명/);
  await page.locator('#adjustStoryGoals').click();
  await page.waitForFunction(()=>document.querySelector('#teacherStory')?.textContent?.includes('1명'));
  assert.match(await page.locator('#teacherStatus').innerText(),/목표를 조정했어요/);

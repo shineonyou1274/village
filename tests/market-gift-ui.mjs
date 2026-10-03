@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import path from 'node:path';
+
+const base=process.env.TEST_URL||'http://127.0.0.1:8787';
+assert(new URL(base).hostname==='127.0.0.1'&&process.env.TEST_DB&&path.resolve(process.env.TEST_DB).startsWith(path.resolve('test-output')+path.sep),'Use an isolated local test database');
+const require=createRequire(import.meta.url);
+const {chromium}=require('C:/Users/경남교육청/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const setup=(await readFile('private/teacher-setup.txt','utf8')).trim();
+async function api(route,body,token){const response=await fetch(base+route,{method:body?'POST':'GET',headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{})});const data=await response.json();assert(response.ok,route+': '+JSON.stringify(data));return data}
+
+const room=await api('/api/create',{setupKey:setup,size:3});
+const [seller,recipient,observer]=room.students.map(student=>student.code);
+await api('/api/teacher',{day:1,weather:1,phase:'협력',market:true,paused:false},room.teacherKey);
+await api('/api/action',{action:'produce',requestId:'gift-ui-produce'},seller);
+const browser=await chromium.launch({channel:'msedge',headless:true});
+const errors=[];
+try{
+ const contexts=await Promise.all([seller,recipient,observer].map((token,index)=>browser.newContext({viewport:{width:index===1?390:768,height:844}})));
+ for(let i=0;i<contexts.length;i++)await contexts[i].addInitScript(token=>sessionStorage.setItem('village-student-token',token),[seller,recipient,observer][i]);
+ const pages=await Promise.all(contexts.map(context=>context.newPage()));
+ for(const page of pages)page.on('pageerror',error=>errors.push(error.message));
+ await Promise.all(pages.map(page=>page.goto(base+'/#market')));
+ const [sellerPage,recipientPage,observerPage]=pages;
+ await Promise.all(pages.map(page=>page.locator('#marketSquare').waitFor()));
+ await recipientPage.waitForFunction(()=>document.querySelector('.market-count')?.textContent.includes('3명'),null,{timeout:25000});
+ assert.equal(await recipientPage.locator('.market-visitor:not(.market-practice-visitor)').count(),2,'Both classmates must appear locally beside the recipient');
+ assert.equal(await recipientPage.locator('#marketHero').count(),1,'The recipient avatar must also appear');
+ await recipientPage.locator('#newSchoolOffer').click();
+ assert.match(await recipientPage.locator('#dialog').innerText(),/내 농장에서 상추를 수확한 뒤 다시 와 주세요/);
+ assert.equal(await recipientPage.locator('#postSchoolOffer').isEnabled(),false);
+ assert.equal(await recipientPage.locator('#marketGoFarm').isVisible(),true);
+ await recipientPage.locator('#dialog [data-close]').click();
+ await sellerPage.locator('#compactPrices').click();
+ assert.match(await sellerPage.locator('#compactPriceBox').innerText(),/오늘 두 값이 같을 수도 있어요/);
+ assert.match(await sellerPage.locator('#compactPriceBox').innerText(),/마을 매입가를 참고/);
+ await sellerPage.keyboard.press('Escape');
+ await sellerPage.locator('#newSchoolOffer').click();
+ await sellerPage.locator('#schoolGift').check();
+ assert.equal(await sellerPage.locator('[data-market-want]').first().isVisible(),false);
+ await sellerPage.locator('#postSchoolOffer').click();
+ await sellerPage.waitForFunction(()=>!document.querySelector('#dialog').open);
+ await recipientPage.evaluate(()=>refreshSchool());
+ await recipientPage.locator('.market-stall[data-market-peer]').first().click();
+ await recipientPage.locator('[data-market-trade]').first().click();
+ assert.match(await recipientPage.locator('#dialog').innerText(),/내가 내는 물건은 없어요/);
+ assert.equal(await recipientPage.locator('#confirmSchoolTrade').isEnabled(),true);
+ await recipientPage.locator('#confirmSchoolTrade').click();
+ await recipientPage.waitForFunction(()=>!document.querySelector('#dialog').open);
+ const [sellerState,recipientState]=await Promise.all([api('/api/state',null,seller),api('/api/state',null,recipient)]);
+ assert.equal(sellerState.me.state.stock[0],1);
+ assert.equal(recipientState.me.state.stock[0],1);
+ assert.deepEqual(errors,[]);
+ console.log('PASS: 390px zero-stock path, three visible avatars, gift offer and claim, and price guidance');
+}finally{await browser.close()}
