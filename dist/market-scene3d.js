@@ -7,7 +7,8 @@ export function createMarketScene({onPeer,onSpot}){
  const loader=new GLTFLoader();
  const names=['market-entrance','market-stall','exchange-table','produce-crate','market-lantern'];
  const load=url=>loader.loadAsync(url);
- let assets=null,avatar=null,renderer=null,scene=null,camera=null,canvas=null,host=null,latest=null;
+ let assets=null,avatar=null,renderer=null,scene=null,camera=null,canvas=null,host=null,latest=null,ambient=null,sun=null,ground=null,path=null,plaza=null,rain=null;
+ const lanternGlows=[];
  let stalls=[],actors=new Map(),last=0,ready=false,failed=false,previousCount=0;
  const palette=[0x659ac6,0xc77b8f,0x89a55b,0xeeb45c,0x9b86bd,0x57aaa0];
  const color=id=>palette[Array.from(id).reduce((n,c)=>n+c.charCodeAt(0),0)%palette.length];
@@ -20,18 +21,19 @@ export function createMarketScene({onPeer,onSpot}){
 
  function makeScene(){
   scene=new THREE.Scene();scene.background=new THREE.Color(0xb8d69a);
-  scene.add(new THREE.HemisphereLight(0xfff9e6,0x709869,2));
-  const sun=new THREE.DirectionalLight(0xffe6b4,2);sun.position.set(-5,12,8);scene.add(sun);
+  ambient=new THREE.HemisphereLight(0xfff9e6,0x709869,2);scene.add(ambient);
+  sun=new THREE.DirectionalLight(0xffe6b4,2);sun.position.set(-5,12,8);scene.add(sun);
   camera=new THREE.OrthographicCamera(-8,8,6,-6,.1,100);
   renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,powerPreference:'low-power'});
   renderer.setPixelRatio(Math.min(devicePixelRatio,innerWidth<760?.85:1));
   renderer.outputColorSpace=THREE.SRGBColorSpace;
   canvas=renderer.domElement;canvas.setAttribute('aria-label','친구 캐릭터와 가판대가 있는 3D 장터. 가판대나 땅을 누르면 이동합니다.');
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(54,20),new THREE.MeshBasicMaterial({color:0xb2d58f}));ground.rotation.x=-Math.PI/2;ground.position.y=-.08;scene.add(ground);
-  const path=new THREE.Mesh(new THREE.PlaneGeometry(54,5.4),new THREE.MeshBasicMaterial({color:0xf2dda9}));path.rotation.x=-Math.PI/2;path.position.set(0,-.06,2.2);scene.add(path);
-  const plaza=new THREE.Mesh(new THREE.CircleGeometry(3.4,32),new THREE.MeshBasicMaterial({color:0xe8d19a}));plaza.rotation.x=-Math.PI/2;plaza.position.set(0,-.05,1.5);plaza.scale.set(1.65,1,1);scene.add(plaza);
+  ground=new THREE.Mesh(new THREE.PlaneGeometry(54,20),new THREE.MeshBasicMaterial({color:0xb2d58f}));ground.rotation.x=-Math.PI/2;ground.position.y=-.08;scene.add(ground);
+  path=new THREE.Mesh(new THREE.PlaneGeometry(54,5.4),new THREE.MeshBasicMaterial({color:0xf2dda9}));path.rotation.x=-Math.PI/2;path.position.set(0,-.06,2.2);scene.add(path);
+  plaza=new THREE.Mesh(new THREE.CircleGeometry(3.4,32),new THREE.MeshBasicMaterial({color:0xe8d19a}));plaza.rotation.x=-Math.PI/2;plaza.position.set(0,-.05,1.5);plaza.scale.set(1.65,1,1);scene.add(plaza);
   place('market-entrance',0,-5.2);place('exchange-table',0,.15);
-  for(const x of [-16,16])for(const z of [-4.5,3.8])place('market-lantern',x,z);
+  for(const x of [-16,16])for(const z of [-4.5,3.8]){const lantern=place('market-lantern',x,z);lantern.traverse(node=>{if(!node.isMesh||node.material?.name!=='glow')return;node.material=node.material.clone();lanternGlows.push({material:node.material,color:node.material.color.getHex(),intensity:node.material.emissiveIntensity||0})})}
+  const points=new Float32Array(240*6);for(let i=0;i<240;i++){const x=(Math.sin(i*9.13)*.6+Math.cos(i*2.17)*.35)*19,z=(Math.sin(i*3.41)*.6+Math.cos(i*5.17)*.35)*9,y=1+(i%13)*.53;points.set([x,y,z,x-.15,y+.7,z-.08],i*6)}const rainGeometry=new THREE.BufferGeometry();rainGeometry.setAttribute('position',new THREE.BufferAttribute(points,3));rain=new THREE.LineSegments(rainGeometry,new THREE.LineBasicMaterial({color:0xd6e8f0,transparent:true,opacity:.84,depthWrite:false}));scene.add(rain);
   for(const x of [-18,18])for(const z of [-3.8,3.5]){
    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.15,.22,1,6),new THREE.MeshStandardMaterial({color:0x936947,roughness:1}));trunk.position.set(x,.45,z);scene.add(trunk);
    const crown=new THREE.Mesh(new THREE.IcosahedronGeometry(.75,0),new THREE.MeshStandardMaterial({color:0x6ba653,roughness:1}));crown.position.set(x,1.4,z);scene.add(crown);
@@ -59,6 +61,7 @@ export function createMarketScene({onPeer,onSpot}){
  }
  function removeActor(id){const a=actors.get(id);if(!a)return;scene.remove(a.group);a.mixer.stopAllAction();a.mixer.uncacheRoot(a.group.children[0]);a.changed.forEach(material=>material.dispose());actors.delete(id)}
  function play(a,name){if(a.current===name||!a.actions[name])return;if(a.current)a.actions[a.current].stop();a.actions[name].reset().play();if(name==='wave'){a.actions[name].setLoop(THREE.LoopOnce,1);a.actions[name].clampWhenFinished=true}a.current=name}
+ function syncWeather(data){const storm=!!data.storm,powerOut=!!data.powerOut;scene.background.setHex(storm?0x8599a2:0xb8d69a);ambient.color.setHex(storm?0xc6d2d7:0xfff9e6);ambient.groundColor.setHex(storm?0x60777e:0x709869);ambient.intensity=storm?1.15:2;sun.color.setHex(storm?0xc5d2d8:0xffe6b4);sun.intensity=storm?.85:2;ground.material.color.setHex(storm?0x829a8a:0xb2d58f);path.material.color.setHex(storm?0xb4b7ae:0xf2dda9);plaza.material.color.setHex(storm?0xb8b4a9:0xe8d19a);rain.visible=storm;for(const entry of lanternGlows){entry.material.color.setHex(powerOut?0x64757b:entry.color);entry.material.emissiveIntensity=powerOut?0:entry.intensity}host.dataset.marketStorm=String(storm);host.dataset.marketRainVisible=String(rain.visible);host.dataset.marketLanternsLit=String(!powerOut)}
  function resize(){if(!host||!renderer)return;const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);const span=12.8,aspect=w/h;camera.left=-span*aspect/2;camera.right=span*aspect/2;camera.top=span/2;camera.bottom=-span/2;camera.position.set(0,10.5,15.5);camera.lookAt(0,.4,-.2);camera.updateProjectionMatrix()}
  function project(point){const v=point.clone().project(camera);return {x:(v.x*.5+.5)*host.clientWidth,y:(-v.y*.5+.5)*host.clientHeight}}
  function placeLabels(){if(!host||!latest)return;
@@ -69,6 +72,7 @@ export function createMarketScene({onPeer,onSpot}){
  function frame(now){requestAnimationFrame(frame);if(!renderer||!host||document.hidden||document.body.dataset.screen!=='market'||!host.isConnected)return;if(now-last<45)return;const dt=Math.min(.08,(now-last)/1000||.05);last=now;
   if(canvas.parentElement!==host)host.prepend(canvas);
   if(canvas.width!==Math.round(host.clientWidth*renderer.getPixelRatio())||canvas.height!==Math.round(host.clientHeight*renderer.getPixelRatio()))resize();
+  if(rain?.visible)rain.position.y=-((now/1000*2.5)%1.3);
   for(const a of actors.values()){const distance=a.group.position.distanceTo(a.target),moving=distance>.05;if(moving){a.group.position.lerp(a.target,Math.min(1,dt*5));a.group.rotation.y=Math.atan2(a.target.x-a.group.position.x,a.target.z-a.group.position.z)}play(a,moving?'walk':a.waving?'wave':'idle');a.mixer.update(dt)}
   camera.updateMatrixWorld();placeLabels();renderer.render(scene,camera);
  }
@@ -86,7 +90,7 @@ export function createMarketScene({onPeer,onSpot}){
   if(data.trial){const guide=data.shown.find(peer=>peer.id!==data.me.id&&!rows.some(row=>row.id===peer.id));if(guide)rows.push({id:guide.id,spot:9,practice:true})}
   const ids=new Set(rows.map(row=>row.id));for(const id of actors.keys())if(!ids.has(id))removeActor(id);
   for(const row of rows){const a=actors.get(row.id)||makeActor(row);a.target.copy(spotPosition(row.id===data.me.id?data.spot:row.spot,mobile));if(!a.group.userData.placed){a.group.position.copy(a.target);a.group.userData.placed=true}a.waving=row.greeting==='wave';for(const material of a.changed.values()){material.transparent=!!row.away;material.opacity=row.away?.38:1;material.depthWrite=!row.away}}
-  host.dataset.actors=String(actors.size);host.dataset.stalls=String(stalls.length);resize();placeLabels();
+  host.dataset.actors=String(actors.size);host.dataset.stalls=String(stalls.length);syncWeather(data);resize();placeLabels();
  }
  return {update,ready:promise};
 }

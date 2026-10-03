@@ -7,6 +7,8 @@ export function createMarketKit({villageRoot,viewport,fallback}){
  const names=['market-entrance','market-stall','exchange-table','produce-crate','market-lantern'];
  const loader=new GLTFLoader();
  const assets=new Map();
+ const lanternGlows=[];let powerOut=false;
+ const syncPower=off=>{powerOut=!!off;for(const entry of lanternGlows){entry.material.color.setHex(powerOut?0x64757b:entry.color);entry.material.emissiveIntensity=powerOut?0:entry.intensity}};
  const load=name=>new Promise(resolve=>loader.load(`./assets/market/${name}.glb`,g=>resolve([name,g]),undefined,()=>resolve([name,null])));
  const place=(name,x,z,rotation=0)=>{
   const model=assets.get(name).scene.clone(true);
@@ -27,9 +29,10 @@ export function createMarketKit({villageRoot,viewport,fallback}){
    place('produce-crate',x<0?x+1.1:x-1.1,z+.6,x<0?-Math.PI/2:Math.PI/2);
   });
   place('exchange-table',0,-21.8);
-  for(const x of [-4.7,4.7])for(const z of [-23,-15.5])place('market-lantern',x,z);
+  for(const x of [-4.7,4.7])for(const z of [-23,-15.5]){const lantern=place('market-lantern',x,z);lantern.traverse(node=>{if(!node.isMesh||node.material?.name!=='glow')return;node.material=node.material.clone();lanternGlows.push({material:node.material,color:node.material.color.getHex(),intensity:node.material.emissiveIntensity||0})})}
+  syncPower(powerOut);
   fallback.visible=false;
   viewport.dataset.marketAsset='ready';
  }).catch(error=>{console.warn('Market scenery unavailable; keeping original stalls',error);viewport.dataset.marketAsset='fallback'});
- return root;
+ return {root,syncPower};
 }
