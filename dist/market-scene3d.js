@@ -67,7 +67,20 @@ export function createMarketScene({onPeer,onSpot}){
  function placeLabels(){if(!host||!latest)return;
   host.querySelectorAll('.market-stall').forEach((button,i)=>{const item=stalls[i];if(!item)return;const p=project(new THREE.Vector3(item.x,2.65,-1.8)),half=button.offsetWidth/2;button.style.left=Math.max(half+4,Math.min(host.clientWidth-half-4,p.x))+'px';button.style.top='58px'});
   const labels=[];for(const [id,a] of actors){const marker=id===latest.me.id?host.querySelector('#marketHero'):host.querySelector(`.market-visitor[data-market-peer="${CSS.escape(id)}"]`);if(marker)labels.push({marker,p:project(a.group.position.clone().add(new THREE.Vector3(0,2.3,0)))})}
-  for(const {marker,p} of labels){const w=marker.offsetWidth||78,h=marker.offsetHeight||24;marker.style.left=Math.max(w/2+4,Math.min(host.clientWidth-w/2-4,p.x))+'px';marker.style.top=Math.max(h+4,Math.min(host.clientHeight-24,p.y))+'px';marker.dataset.projectedX=p.x.toFixed(1);marker.dataset.projectedY=p.y.toFixed(1);marker.hidden=false}
+  labels.sort((a,b)=>Number(b.marker.id==='marketHero')-Number(a.marker.id==='marketHero')||(a.marker.dataset.marketPeer||'').localeCompare(b.marker.dataset.marketPeer||''));
+  const placed=[];
+  for(const {marker,p} of labels){
+   const w=marker.offsetWidth||78,h=marker.offsetHeight||24,step=w+8;
+   const clampX=x=>Math.max(w/2+4,Math.min(host.clientWidth-w/2-4,x));
+   const clampY=y=>Math.max(h+4,Math.min(host.clientHeight-24,y));
+   let chosen=null;
+   for(const [dx,dy] of [[0,0],[-step,0],[step,0],[-step*2,0],[step*2,0],[0,-h-8],[0,h+8]]){
+    const x=clampX(p.x+dx),y=clampY(p.y+dy),box={left:x-w/2,right:x+w/2,top:y-h,bottom:y};
+    if(placed.every(other=>box.right+4<=other.left||box.left>=other.right+4||box.bottom+4<=other.top||box.top>=other.bottom+4)){chosen={x,y,box};break}
+   }
+   if(!chosen){const x=clampX(p.x),y=clampY(p.y);chosen={x,y,box:{left:x-w/2,right:x+w/2,top:y-h,bottom:y}}}
+   marker.style.left=chosen.x+'px';marker.style.top=chosen.y+'px';marker.dataset.projectedX=p.x.toFixed(1);marker.dataset.projectedY=p.y.toFixed(1);marker.hidden=false;placed.push(chosen.box);
+  }
  }
  function frame(now){requestAnimationFrame(frame);if(!renderer||!host||document.hidden||document.body.dataset.screen!=='market'||!host.isConnected)return;if(now-last<45)return;const dt=Math.min(.08,(now-last)/1000||.05);last=now;
   if(canvas.parentElement!==host)host.prepend(canvas);

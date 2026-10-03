@@ -27,6 +27,9 @@ try{
  await recipientPage.waitForFunction(()=>document.querySelector('.market-count')?.textContent.includes('3명'),null,{timeout:25000});
  assert.equal(await recipientPage.locator('.market-visitor:not(.market-practice-visitor)').count(),2,'Both classmates must appear locally beside the recipient');
  assert.equal(await recipientPage.locator('#marketHero').count(),1,'The recipient avatar must also appear');
+ await recipientPage.waitForFunction(()=>document.querySelector('.market-plaza.market-3d')?.dataset.actors==='3');
+ const nameplates=await recipientPage.locator('.market-visitor:not(.market-practice-visitor),#marketHero').evaluateAll(nodes=>nodes.map(node=>{const r=node.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}}));
+ for(let i=0;i<nameplates.length;i++)for(let j=i+1;j<nameplates.length;j++){const a=nameplates[i],b=nameplates[j];assert(a.right<=b.left||b.right<=a.left||a.bottom<=b.top||b.bottom<=a.top,'Three student nameplates must not overlap on a narrow screen')}
  assert.match(await recipientPage.locator('.market-stall').last().innerText(),/학생 002의 가판대/,'Own stand needs a visible label');
  const standOrder=await recipientPage.locator('.market-stall[data-market-peer]').evaluateAll(nodes=>nodes.map(node=>node.dataset.marketPeer));
  await recipientPage.reload();
