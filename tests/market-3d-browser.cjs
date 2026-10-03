@@ -23,7 +23,7 @@ assert.equal(new URL(base).hostname,'127.0.0.1');
    await page.waitForFunction(()=>document.querySelector('.market-plaza.market-3d canvas')&&document.querySelector('.market-plaza').dataset.asset==='ready'&&Number(document.querySelector('.market-plaza').dataset.actors)>=2,null,{timeout:12000});
    const scene=await page.evaluate(()=>{
     const root=document.querySelector('.market-plaza'),canvas=root.querySelector('canvas'),rect=root.getBoundingClientRect();
-    return {actors:Number(root.dataset.actors),stalls:Number(root.dataset.stalls),canvasWidth:canvas.width,sceneWidth:rect.width,scrollWidth:document.documentElement.scrollWidth,viewportWidth:innerWidth,legacyVisible:getComputedStyle(root.querySelector('.market-person')).display!=='none'};
+    return {actors:Number(root.dataset.actors),stalls:Number(root.dataset.stalls),canvasWidth:canvas.width,sceneWidth:rect.width,sceneHeight:rect.height,scrollWidth:document.documentElement.scrollWidth,viewportWidth:innerWidth,legacyVisible:getComputedStyle(root.querySelector('.market-person')).display!=='none'};
    });
    assert(scene.actors>=2,'Practice friend and player should both have 3D avatars');
    assert(scene.stalls>=3,'Market stalls should be 3D');
@@ -36,7 +36,7 @@ assert.equal(new URL(base).hostname,'127.0.0.1');
    await page.waitForFunction(()=>document.querySelector('.market-detail')?.textContent.includes('연습 친구'),null,{timeout:5000});
    assert.match(await page.locator('.market-detail').innerText(),/연습 친구/);
    const before=await page.locator('#marketHero').boundingBox();
-   await page.locator('.market-plaza canvas').click({position:{x:scene.sceneWidth*.82,y:300},force:true});
+    await page.locator('.market-plaza canvas').click({position:{x:scene.sceneWidth*.82,y:scene.sceneHeight*.7},force:true});
    await page.waitForFunction(left=>Math.abs(document.querySelector('#marketHero').getBoundingClientRect().left-left)>8,before.x,{timeout:5000});
    await context.close();
    console.log(`PASS ${width}x${height}: market models, shared avatar style, no overflow`);

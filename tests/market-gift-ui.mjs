@@ -74,7 +74,12 @@ try{
  assert.equal(await sellerPage.locator('[data-market-want]').first().isVisible(),false);
  await sellerPage.locator('#postSchoolOffer').click();
  await sellerPage.waitForFunction(()=>!document.querySelector('#dialog').open);
- await recipientPage.evaluate(()=>refreshSchool());
+ await sellerPage.locator('[data-market-mine]').click();
+ await sellerPage.locator('[data-market-trade]').first().click();
+ assert.match(await sellerPage.locator('#dialog').innerText(),/돌려받을 물건:.*상추 1개/);
+ assert.equal((await sellerPage.locator('#dialog').innerText()).match(/학생 001/g)?.length||0,0,'Cancel dialog should not show the same person on both sides');
+ await sellerPage.locator('#dialog [data-close]').click();
+ await recipientPage.waitForFunction(id=>document.querySelector(`.market-stall[data-market-peer="${id}"] .stall-goods`)?.textContent.includes('🎁'),sellerId,{timeout:12000});
  await recipientPage.locator(`.market-stall[data-market-peer="${sellerId}"]`).click();
  await recipientPage.locator('[data-market-trade]').first().click();
  assert.match(await recipientPage.locator('#dialog').innerText(),/내가 내는 물건은 없어요/);
