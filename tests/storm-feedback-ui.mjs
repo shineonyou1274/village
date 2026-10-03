@@ -19,7 +19,11 @@ try{
  await page.locator('#studentCode').fill(room.students[0].code);
  await page.getByRole('button',{name:'우리 반 들어가기'}).click();
  assert.deepEqual(await page.evaluate(()=>[koreanParticle('학생 001','와','과'),koreanParticle('학생 002','와','과'),koreanParticle('생선','를','을')]),['과','와','을']);
- await page.locator('#compactWeather').filter({hasText:'밭 복구 필요'}).waitFor();
+ await page.locator('#compactWeather').filter({hasText:'복구 후 씨앗 심기 가능'}).waitFor();
+ const repairGuide=page.locator('#farmAlert');
+ assert.match(await repairGuide.innerText(),/안전 복구 미션을 마치면 다시 농사할 수 있어요/);
+ assert.match(await repairGuide.innerText(),/씨앗을 심거나 물을 주고 수확할 수 없어요/);
+ await page.screenshot({path:'test-output/storm-farm-guide.png'});
  await page.locator('#compactPrices').click();
  assert.equal(await page.locator('#compactPriceBox').isVisible(),true);
  assert.match(await page.locator('#compactPriceBox').innerText(),/교환 가능 · 기준가 없음/);
@@ -29,7 +33,7 @@ try{
  assert.equal(await page.locator('#weatherExplanation').isVisible(),true);
  assert.match(await page.locator('#weatherExplanation').innerText(),/장터는 선생님이 별도로/);
  await page.locator('dialog:has(#weatherExplanation) button').click();
- await page.evaluate(()=>quiz('repair'));
+ await page.locator('#farmRepair').click();
  await page.locator('#dialog [data-answer="0"]').click();
  await page.locator('#feedback').filter({hasText:'감전'}).waitFor();
  await page.locator('#dialog [data-answer="1"]').click();
