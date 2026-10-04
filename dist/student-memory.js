@@ -29,7 +29,7 @@
    const token=sessionStorage.getItem('village-student-token');
    if(!token)return '';
    // Browsers may copy sessionStorage into a newly opened tab. A copied login still needs a choice.
-   if(!sameTab()&&(read()?.token===token||window.opener)){sessionStorage.removeItem('village-student-token');sessionStorage.removeItem('village-pending-command');return ''}
+   if(!sameTab()){sessionStorage.removeItem('village-student-token');sessionStorage.removeItem('village-pending-command');return ''}
    return token
   }
  };

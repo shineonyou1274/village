@@ -43,6 +43,13 @@ try{
  assert.equal(await student.evaluate(()=>StudentMemory.read()),null,'A link must not silently remember an account on a shared device');
  await student.reload();await student.waitForFunction(()=>window.classroomActive&&window.classroomData?.me?.accountName==='학생 001');
  assert.equal((await request('/api/state',{token:room.students[0].code})).data.me.id,await student.evaluate(()=>classroomData.me.id),'The original code must still open the same record');
+ const copied=await context.newPage();
+ await copied.addInitScript(token=>{sessionStorage.setItem('village-student-token',token);sessionStorage.setItem('village-confirmed-tab-v1','copied-tab-id')},room.students[0].code);
+ await copied.goto(base+'/#farm');
+ await copied.locator('#schoolEntry').waitFor();
+ assert.equal(await copied.evaluate(()=>window.classroomActive),false,'A copied session must not silently enter the previous student account');
+ assert.equal(await copied.evaluate(()=>sessionStorage.getItem('village-student-token')),null,'A copied student token must be removed from a new tab');
+ await copied.close();
  await context.close();await teacher.close();assert.deepEqual(errors,[]);
- console.log('PASS: stable private student links, teacher QR, old code, one-tap entry, shared-device privacy, reload and no leaked URL token');
+ console.log('PASS: stable private student links, teacher QR, old code, one-tap entry, shared-device privacy, copied-tab guard, reload and no leaked URL token');
 }finally{await browser.close()}
