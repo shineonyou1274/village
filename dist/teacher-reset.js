@@ -12,11 +12,12 @@ resetCard.innerHTML=`<h2>시범 수업 전 학급 초기화</h2>
 document.querySelector('#teacherRolePolicy').after(resetCard);
 let resetBackupRoom='';
 let resetBackupVersion=null;
+let resetBackupCheckpoint=null;
 let lastShownResetRoom='';
 const previousTeacherShow=show;
 show=function(d,force=false){
  previousTeacherShow(d,force);
- if(lastShownResetRoom&&lastShownResetRoom!==d.room.id){resetBackupRoom='';resetBackupVersion=null}
+ if(lastShownResetRoom&&lastShownResetRoom!==d.room.id){resetBackupRoom='';resetBackupVersion=null;resetBackupCheckpoint=null}
  lastShownResetRoom=d.room.id;
  const scope=document.querySelector('#resetScope');
  scope.textContent=`선택한 학급: ${d.room.code} · 학생 ${d.players.length}명. 다른 학급의 기록은 바뀌지 않습니다.`;
@@ -47,6 +48,12 @@ document.querySelector('#downloadResetBackup').onclick=async()=>{
   link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
   resetBackupRoom=data.room.id;
   resetBackupVersion=backup.records.rooms[0].version;
+  resetBackupCheckpoint={
+   expectedPlayerVersions:backup.records.players.reduce((sum,player)=>sum+player.version,0),
+   expectedPlayerCount:backup.records.players.length,
+   expectedCommandCount:backup.records.commands.length,
+   expectedOfferCount:backup.records.offers.length
+  };
   status.textContent='백업 파일을 내려받았습니다. 초기화할 학급 코드와 직업 배정 방식을 확인해 주세요.';
   updateResetButton();
  }catch(error){status.textContent=error.message}finally{button.disabled=false}
@@ -57,8 +64,8 @@ document.querySelector('#resetClassActivity').onclick=async()=>{
  if(!window.confirm(`학급 ${room.code}의 학생 ${data.players.length}명 활동 기록을 초기화할까요? 입장 코드는 유지되고 수업은 일시정지됩니다.`))return;
  button.disabled=true;status.textContent='학급 활동을 초기화하고 있어요.';
  try{
-  const result=await request('/api/teacher/reset',{classCode:room.code,confirm:'RESET_CLASS_ACTIVITY',mode:document.querySelector('#resetRoleMode').value,expectedRoomVersion:resetBackupVersion});
-  resetBackupRoom='';resetBackupVersion=null;show(result,true);
+  const result=await request('/api/teacher/reset',{classCode:room.code,confirm:'RESET_CLASS_ACTIVITY',mode:document.querySelector('#resetRoleMode').value,expectedRoomVersion:resetBackupVersion,...resetBackupCheckpoint});
+  resetBackupRoom='';resetBackupVersion=null;resetBackupCheckpoint=null;show(result,true);
   status.textContent=`학급 ${result.room.code}의 ${result.reset.students}명 활동을 초기화했습니다. 수업 운영에서 상태를 진행으로 바꾼 뒤 학생에게 입장해 달라고 안내하세요.`;
  }catch(error){status.textContent=error.message;updateResetButton()}
 };

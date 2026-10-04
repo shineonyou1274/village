@@ -38,10 +38,12 @@ try{
  assert(backup.data.records.commands.length>0);
  assert(!Object.hasOwn(backup.data.records.players[0],'token_hash'));
  const expectedRoomVersion=backup.data.records.rooms[0].version;
+ const checkpoint={expectedRoomVersion,expectedPlayerVersions:backup.data.records.players.reduce((sum,p)=>sum+p.version,0),expectedPlayerCount:backup.data.records.players.length,expectedCommandCount:backup.data.records.commands.length,expectedOfferCount:backup.data.records.offers.length};
  assert.equal((await request('/api/teacher/reset',{classCode:'WRONG',confirm:'RESET_CLASS_ACTIVITY',mode:'choice'},room.teacherKey)).status,400);
  assert.equal((await request('/api/teacher/reset',{classCode:room.roomCode,confirm:'RESET_CLASS_ACTIVITY',mode:'choice'},student.code)).status,403);
- assert.equal((await request('/api/teacher/reset',{classCode:room.roomCode,confirm:'RESET_CLASS_ACTIVITY',mode:'choice',expectedRoomVersion:expectedRoomVersion-1},room.teacherKey)).status,409);
- const reset=await request('/api/teacher/reset',{classCode:room.roomCode,confirm:'RESET_CLASS_ACTIVITY',mode:'choice',expectedRoomVersion},room.teacherKey);
+ assert.equal((await request('/api/teacher/reset',{classCode:room.roomCode,confirm:'RESET_CLASS_ACTIVITY',mode:'choice',...checkpoint,expectedRoomVersion:expectedRoomVersion-1},room.teacherKey)).status,409);
+ assert.equal((await request('/api/teacher/reset',{classCode:room.roomCode,confirm:'RESET_CLASS_ACTIVITY',mode:'choice',...checkpoint,expectedCommandCount:checkpoint.expectedCommandCount-1},room.teacherKey)).status,409);
+ const reset=await request('/api/teacher/reset',{classCode:room.roomCode,confirm:'RESET_CLASS_ACTIVITY',mode:'choice',...checkpoint},room.teacherKey);
  assert.equal(reset.status,200);
  assert.equal(reset.data.reset.students,4);
  assert.equal(reset.data.room.roleMode,'choice');

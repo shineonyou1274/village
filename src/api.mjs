@@ -182,6 +182,14 @@ if(u.pathname==='/api/teacher/reset'&&req.method==='POST'){
  if(!a.teacher)err('교사만 학급을 초기화할 수 있어요.',403);
  if(String(b.classCode||'').trim().toUpperCase()!==a.room.code||b.confirm!=='RESET_CLASS_ACTIVITY')err('초기화할 학급 코드를 정확히 입력해 주세요.',400);
  if(!Number.isInteger(b.expectedRoomVersion)||b.expectedRoomVersion!==a.room.version)err('백업 이후 학급 상태가 바뀌었어요. 현재 기록을 다시 내려받아 확인해 주세요.',409);
+ const [playerCheckpoint,commandCheckpoint,offerCheckpoint]=await Promise.all([
+  db.prepare('SELECT count(*) count,coalesce(sum(version),0) versions FROM players WHERE room=?').bind(a.room.id).first(),
+  db.prepare('SELECT count(*) count FROM commands WHERE room=?').bind(a.room.id).first(),
+  db.prepare('SELECT count(*) count FROM offers WHERE room=?').bind(a.room.id).first()
+ ]);
+ if(b.expectedPlayerVersions!==playerCheckpoint.versions||b.expectedPlayerCount!==playerCheckpoint.count||
+   b.expectedCommandCount!==commandCheckpoint.count||b.expectedOfferCount!==offerCheckpoint.count)
+  err('백업 이후 학생 활동이 바뀌었어요. 현재 기록을 다시 내려받아 확인해 주세요.',409);
  const mode=roleMode(b.mode);if(!mode)err('초기화 후 직업 배정 방식을 선택해 주세요.');
  const result=await resetClassActivity(db,a.room.id,mode);
  const fresh=await managedAuth(db,await auth(req,db),managed);
