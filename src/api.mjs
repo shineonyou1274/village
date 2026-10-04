@@ -1,5 +1,6 @@
 import {plazaApi} from './plaza.mjs';
 import {careerAction} from './career-data.mjs';
+import {balancedRoles,canReassignRole,assignRole} from './role-policy.mjs';
 import {growthApi,prepareGrowth,prepareGardenRole} from './growth.mjs';
 import {crops,questions,garden,growTime,changeCrop,tradeStock,changeTrade,farmProgress} from './growth-data.mjs';
 import {campusApi,managedAuth} from './campus.mjs';
@@ -18,6 +19,27 @@ const linkKey=secret=>crypto.subtle.importKey('raw',encoder.encode(secret),{name
 const linkMessage=(room,id)=>encoder.encode(`student-entry-v1:${room}:${id}`);
 async function studentLink(key,room,id){return id+hex(await crypto.subtle.sign('HMAC',key,linkMessage(room,id)))}
 const initial=(i)=>({job:0,progression:1,name:`학생 ${String(i+1).padStart(3,'0')}`,coins:80,stock:[0,0,0,0],level:1,quizDay:0,knowledge:false,road:false,repaired:false,repairDay:0,donated:[0,0,0,0],completed:false,history:['학급 마을에 입장했어요.'],place:'work',farm:{plots:Array.from({length:6},()=>({seeded:false,wateredAt:0})),picked:0,sold:0},dailyProduction:0,productionDay:0});
+const roleMode=s=>['balanced','choice'].includes(s)?s:null;
+async function classRoleMode(db,room){return (await db.prepare('SELECT mode FROM role_policies WHERE room=?').bind(room).first())?.mode||'legacy'}
+async function setClassRoleMode(db,room,mode){
+ const rows=(await db.prepare('SELECT id,state,version FROM players WHERE room=? ORDER BY name').bind(room).all()).results;
+ const eligible=rows.filter(p=>canReassignRole(JSON.parse(p.state)));
+ const counts=[0,0,0,0];
+ for(const p of rows)if(!eligible.includes(p)){
+  const s=JSON.parse(p.state);if(!s.rolePending&&Number.isInteger(s.job))counts[s.job]++;
+ }
+ const jobs=mode==='balanced'?balancedRoles(eligible.length,counts):[];
+ const updates=eligible.map((p,i)=>{
+  const s=assignRole(JSON.parse(p.state),mode,jobs[i]||0);
+  return db.prepare('UPDATE players SET state=?,version=version+1 WHERE id=? AND version=?').bind(JSON.stringify(s),p.id,p.version);
+ });
+ await db.batch([
+  db.prepare('INSERT INTO role_policies(room,mode) VALUES(?,?) ON CONFLICT(room) DO UPDATE SET mode=excluded.mode').bind(room,mode),
+  ...updates,
+  db.prepare('UPDATE rooms SET version=version+1 WHERE id=?').bind(room)
+ ]);
+ return {changed:eligible.length,preserved:rows.length-eligible.length};
+}
 const tradeNames=['상추','우유','사과','생선','당근','토마토','감자','딸기'];
 const factors=[[1,1,1,1],[1.25,1.2,1.3,1.1],[1.1,1.15,.9,1.2],[1.4,1.35,1.2,1.5],[1.1,1.05,1.1,1.2],[.8,.95,.8,1]];
 function price(room,item){return Math.round([10,14,12,16][item]*factors[room.weather][item])}
@@ -27,8 +49,8 @@ async function body(req){if(Number(req.headers.get('content-length'))>16384)err(
 async function limiter(db,key,now,max=15){const row=await db.prepare('INSERT INTO attempts(key,count,expires) VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN expires<? THEN 1 ELSE count+1 END,expires=CASE WHEN expires<? THEN excluded.expires ELSE expires END RETURNING count').bind(key,now+60000,now,now).first();if(row.count>max)err('잠시 후 다시 시도해 주세요.',429)}
 async function auth(req,db){const token=(req.headers.get('authorization')||'').replace(/^Bearer /,'');if(!/^(?:[a-f0-9]{24,64}|[a-f0-9]{96})$/.test(token))err('입장 코드를 입력해 주세요.',401);const linked=token.length===96,h=linked?null:await hash(token),p=await db.prepare(`SELECT p.*,r.code,r.day,r.weather,r.market,r.paused,r.phase,r.coop,r.goal,r.version room_version${linked?',r.teacher_hash signing_secret':''} FROM players p JOIN rooms r ON r.id=p.room WHERE ${linked?'p.id':'p.token_hash'}=?`).bind(linked?token.slice(0,32):h).first();if(p){if(linked){const key=await linkKey(p.signing_secret),signature=new Uint8Array((token.slice(32).match(/../g)||[]).map(n=>parseInt(n,16)));if(!await crypto.subtle.verify('HMAC',key,signature,linkMessage(p.room,p.id)))err('학생 입장 링크를 확인해 주세요.',401)}return {player:p,room:{id:p.room,code:p.code,day:p.day,weather:p.weather,market:p.market,paused:p.paused,phase:p.phase,coop:p.coop,goal:p.goal,version:p.room_version}}}if(!linked){const r=await db.prepare('SELECT * FROM rooms WHERE teacher_hash=?').bind(h).first();if(r)return {teacher:true,room:r}}err('입장 정보가 만료되었어요. 다시 입장해 주세요.',401)}
 function safeRoom(r){return {id:r.id,code:r.code,day:r.day,weather:r.weather,market:!!r.market,paused:!!r.paused,phase:r.phase,coop:JSON.parse(r.coop),goal:r.goal,version:r.version}}
-async function snapshot(db,a,compact=false){const missionPromise=missionSnapshot(db,a.room.id);if(compact){const mission=await missionPromise,state=JSON.parse(a.player.state);return {mission,room:safeRoom(a.room),me:{id:a.player.id,accountName:a.player.name,state,version:a.player.version},shipping:shippingConditions(a.room,mission,state),serverTime:Date.now()}}const playersPromise= db.prepare('SELECT id,name,state,last_seen FROM players WHERE room=? ORDER BY name').bind(a.room.id).all();const offersPromise= db.prepare("SELECT o.*,COALESCE(json_extract(p.state,'$.name'),p.name) seller_name FROM offers o JOIN players p ON p.id=o.seller WHERE o.room=? AND o.status='open' ORDER BY o.created DESC LIMIT 200").bind(a.room.id).all();const [players,offers,mission]=await Promise.all([playersPromise,offersPromise,missionPromise]);const own=a.player?JSON.parse(a.player.state):null;return {mission,room:safeRoom(a.room),me:a.player?{id:a.player.id,accountName:a.player.name,state:own,version:a.player.version}:null,shipping:own?shippingConditions(a.room,mission,own):null,teacher:!!a.teacher,players:players.results.map(p=>{const s=JSON.parse(p.state);return {id:p.id,name:s.name||p.name,accountName:p.name,job:s.job,place:s.place,plots:s.farm.plots.length,picked:s.farm.picked,online:Date.now()-p.last_seen<40000,...(a.teacher?{coins:s.coins,stock:s.stock,donated:s.donated}: {})}}),offers:offers.results,serverTime:Date.now()}}
-async function mutation(db,a,input){const room=a.room,p=a.player;if(!p)err('학생으로 입장해 주세요.',403);if(!/^[a-zA-Z0-9_-]{8,80}$/.test(input.requestId||''))err('저장 식별자가 없습니다. 새로고침 후 다시 시도해 주세요.');const cmdId=p.id+':'+input.requestId;const prior=await db.prepare('SELECT id FROM commands WHERE id=? AND actor=?').bind(cmdId,p.id).first();if(prior)return {duplicate:true};if(room.paused&&input.action!=='cancel')err('교사가 수업을 일시정지했어요.',423);const s=JSON.parse(p.state);const kind=input.action;let partner=null,s2=null,v2=null,offerId=null,offerData=null,item=null,qty=null;const now=Date.now();
+async function snapshot(db,a,compact=false){const missionPromise=missionSnapshot(db,a.room.id);if(compact){const mission=await missionPromise,state=JSON.parse(a.player.state);return {mission,room:safeRoom(a.room),me:{id:a.player.id,accountName:a.player.name,state,version:a.player.version},shipping:shippingConditions(a.room,mission,state),serverTime:Date.now()}}const playersPromise= db.prepare('SELECT id,name,state,last_seen FROM players WHERE room=? ORDER BY name').bind(a.room.id).all();const offersPromise= db.prepare("SELECT o.*,COALESCE(json_extract(p.state,'$.name'),p.name) seller_name FROM offers o JOIN players p ON p.id=o.seller WHERE o.room=? AND o.status='open' ORDER BY o.created DESC LIMIT 200").bind(a.room.id).all();const [players,offers,mission,mode]=await Promise.all([playersPromise,offersPromise,missionPromise,classRoleMode(db,a.room.id)]);const own=a.player?JSON.parse(a.player.state):null;return {mission,room:{...safeRoom(a.room),roleMode:mode},me:a.player?{id:a.player.id,accountName:a.player.name,state:own,version:a.player.version}:null,shipping:own?shippingConditions(a.room,mission,own):null,teacher:!!a.teacher,players:players.results.map(p=>{const s=JSON.parse(p.state);return {id:p.id,name:s.name||p.name,accountName:p.name,job:s.job,rolePending:!!s.rolePending,place:s.place,plots:s.farm.plots.length,picked:s.farm.picked,online:Date.now()-p.last_seen<40000,...(a.teacher?{coins:s.coins,stock:s.stock,donated:s.donated}: {})}}),offers:offers.results,serverTime:Date.now()}}
+async function mutation(db,a,input){const room=a.room,p=a.player;if(!p)err('학생으로 입장해 주세요.',403);if(!/^[a-zA-Z0-9_-]{8,80}$/.test(input.requestId||''))err('저장 식별자가 없습니다. 새로고침 후 다시 시도해 주세요.');const cmdId=p.id+':'+input.requestId;const prior=await db.prepare('SELECT id FROM commands WHERE id=? AND actor=?').bind(cmdId,p.id).first();if(prior)return {duplicate:true};if(room.paused&&input.action!=='cancel')err('교사가 수업을 일시정지했어요.',423);const s=JSON.parse(p.state);const kind=input.action;if(s.rolePending&&!['job','profile','place'].includes(kind))err('먼저 내 직업을 선택해 주세요.',409);let partner=null,s2=null,v2=null,offerId=null,offerData=null,item=null,qty=null;const now=Date.now();
 if(['plant','water','harvest','produce'].includes(kind)&&room.weather===3&&s.repairDay!==room.day)err('안전 복구 미션을 마치면 씨앗 심기·물 주기·수확하기를 할 수 있어요.');
 if(['plant','water','harvest'].includes(kind)){const index=int(input.plot,0,s.farm.plots.length-1),plot=s.farm.plots[index];if(kind==='plant'){if(plot.seeded)err('이미 씨앗이 심어져 있어요.',409);plot.crop=int(input.crop??0,0,4);if(!farmProgress(s).unlocked[plot.crop])err('누적 수확으로 이 씨앗을 먼저 열어 주세요.');plot.seeded=true;note(s,`${index+1}번 밭에 씨를 심었어요.`)}if(kind==='water'){if(!plot.seeded||plot.wateredAt)err('물을 줄 수 있는 상태가 아니에요.',409);plot.wateredAt=now;note(s,`${index+1}번 밭에 물을 줬어요.`)}if(kind==='harvest'){if(!plot.wateredAt||now-plot.wateredAt<growTime(plot))err('아직 작물이 자라고 있어요.',409);const crop=crops[plot.crop||0],amount=crop.yield+s.level-1;changeCrop(s,crop.id,amount);garden(s).harvested[crop.id]+=amount;s.farm.picked+=amount;s.farm.plots[index]=crop.id===2&&(plot.round||0)<2?{seeded:true,crop:2,wateredAt:now,round:(plot.round||0)+1}:{seeded:false,wateredAt:0};note(s,'수확한 '+crop.name+'를 보관소에 넣었어요.')}}
 else if(kind==='crop_donate'||kind==='crop_sell'){({item,qty}=prepareGrowth(input,s,room));if(kind==='crop_donate')offerData={season:input.season??1}}
@@ -51,16 +73,42 @@ else if(kind==='quiz'){if(s.quizDay===room.day)err('오늘 보너스는 이미 �
 else if(kind==='repair'){if(input.answer!==1)err('안전한 대응을 골라 주세요.');s.repairDay=room.day;s.repaired=true;note(s,'전력 설비 기술자와 안전하게 문제를 해결했어요.')}
 else if(kind==='upgrade'){if(!s.knowledge||s.level>=2||s.coins<60)err('직업 탐험과 60코인이 필요해요.');s.coins-=60;s.level=2}
 else if(kind==='profile'){const nickname=String(input.name||'').trim();if(!/^[\p{L}\p{N} _.-]{1,12}$/u.test(nickname))err('별명은 글자·숫자·공백 1~12자로 입력해 주세요.');s.name=nickname;note(s,'마을에서 사용할 별명을 바꿨어요.')}
-else if(kind==='job'){const job=int(input.job,0,3),picked=s.farm.picked||0;if(job===s.job)err('이미 맡고 있는 역할이에요.',409);if(s.progression===1){if(s.specialized||s.job!==0&&picked>=16)err('전문 역할은 이미 정했어요. 지금 역할을 이어 가세요.');if(job===1&&picked<80)err('목장 역할은 누적 수확 80개부터 선택할 수 있어요.');if((job===2||job===3)&&picked<16)err('과수·물가 역할은 누적 수확 16개부터 선택할 수 있어요.');if(job===0&&picked>0)err('첫 수확 뒤에는 농업인으로 계속 일하거나 전문 역할을 고를 수 있어요.');if(job!==0)s.specialized=true}else if(picked>0||s.dailyProduction>0)err('역할 변경은 첫 생산 전에 할 수 있어요.');s.job=job;note(s,`새로운 전문 역할을 맡았어요: ${['농업인','목장 일꾼','과수 재배자','양식업자'][job]}.`)}
-else if(kind==='place'){if(!['work','market','season','village'].includes(input.place))err('이동할 장소를 확인해 주세요.');s.place=input.place}
+else if(kind==='job'){
+ const job=int(input.job,0,3),picked=s.farm.picked||0;
+ if(s.rolePending){
+  if(await classRoleMode(db,room.id)!=='choice')err('직업 배정 방식이 바뀌었어요. 새로 확인해 주세요.',409);
+  s.job=job;s.progression=0;s.rolePending=false;s.roleAssigned=true;
+  note(s,`내가 선택한 직업: ${['채소 농업인','낙농업인','과수 농업인','양식 어업인'][job]}.`);
+ }else{
+  if(s.roleAssigned)err('이 반의 직업은 정해졌어요. 선생님께 문의해 주세요.',409);
+  if(job===s.job)err('이미 맡고 있는 역할이에요.',409);
+  if(s.progression===1){if(s.specialized||s.job!==0&&picked>=16)err('전문 역할은 이미 정했어요. 지금 역할을 이어 가세요.');if(job===1&&picked<80)err('목장 역할은 누적 수확 80개부터 선택할 수 있어요.');if((job===2||job===3)&&picked<16)err('과수·물가 역할은 누적 수확 16개부터 선택할 수 있어요.');if(job===0&&picked>0)err('첫 수확 뒤에는 농업인으로 계속 일하거나 전문 역할을 고를 수 있어요.');if(job!==0)s.specialized=true}else if(picked>0||s.dailyProduction>0)err('역할 변경은 첫 생산 전에 할 수 있어요.');
+  s.job=job;note(s,`새로운 전문 역할을 맡았어요: ${['농업인','목장 일꾼','과수 재배자','양식업자'][job]}.`);
+ }
+}else if(kind==='place'){if(!['work','market','season','village'].includes(input.place))err('이동할 장소를 확인해 주세요.');s.place=input.place}
 else if(kind==='offer'){if(!room.market)err('장터가 닫혀 있어요.');const count=await db.prepare("SELECT count(*) n FROM offers WHERE seller=? AND status='open'").bind(p.id).first();if(count.n>=3)err('열린 제안은 3개까지 가능해요.');const gift=input.gift===true;offerData={giveItem:int(input.giveItem,0,7),giveQty:int(input.giveQty,1,50),wantItem:gift?0:int(input.wantItem,0,7),wantQty:gift?0:int(input.wantQty,1,50)};if(!gift&&offerData.giveItem===offerData.wantItem)err('서로 다른 물건을 선택해 주세요.');if(tradeStock(s,offerData.giveItem)<offerData.giveQty)err('제안할 물건이 부족해요.');changeTrade(s,offerData.giveItem,-offerData.giveQty);offerId=random();note(s,gift?'나눌 물건을 장터에 맡겼어요.':'교환할 물건을 장터에 맡겼어요.')}
 else if(kind==='accept'||kind==='cancel'){const o=await db.prepare('SELECT * FROM offers WHERE id=? AND room=?').bind(String(input.offer),room.id).first();if(!o||o.status!=='open')err('이미 완료되거나 취소된 제안이에요.',409);offerId=o.id;if(kind==='cancel'){if(o.seller!==p.id)err('내 제안만 취소할 수 있어요.',403);changeTrade(s,o.give_item,o.give_qty);note(s,'제안을 취소하고 물건을 돌려받았어요.')}else{if(!room.market)err('장터가 닫혀 있어요.');if(o.seller===p.id)err('자신의 제안은 수락할 수 없어요.');const gift=o.want_qty===0;if(!gift&&tradeStock(s,o.want_item)<o.want_qty)err('교환할 물건이 부족해요.');const other=await db.prepare('SELECT * FROM players WHERE id=? AND room=?').bind(o.seller,room.id).first();if(!other)err('거래 상대를 찾을 수 없어요.');partner=other.id;v2=other.version;s2=JSON.parse(other.state);if(!gift)changeTrade(s,o.want_item,-o.want_qty);changeTrade(s,o.give_item,o.give_qty);if(!gift)changeTrade(s2,o.want_item,o.want_qty);if(gift){note(s,`${other.name} 님에게 ${tradeNames[o.give_item]} ${o.give_qty}개를 나눔 받았어요.`);note(s2,`${p.name} 님에게 ${tradeNames[o.give_item]} ${o.give_qty}개를 나눴어요.`)}else{note(s,`${other.name} 님과 교환했어요 · ${tradeNames[o.want_item]} ${o.want_qty}개 → ${tradeNames[o.give_item]} ${o.give_qty}개`);note(s2,`${p.name} 님과 교환했어요 · ${tradeNames[o.give_item]} ${o.give_qty}개 → ${tradeNames[o.want_item]} ${o.want_qty}개`)}}}
 else if(kind==='mission_task'||kind==='mission_donate'){const prepared=await prepareMissionAction(db,a,input,s);item=prepared.item;qty=prepared.qty;}
 else if(kind==='donate'){if(room.phase!=='협력')err('아직 협력 시즌이 아니에요.');item=int(input.item,0,3);qty=int(input.qty||1,1,50);if(s.stock[item]<qty)err('보탤 물건이 부족해요.');s.stock[item]-=qty;s.donated[item]+=qty;note(s,`공동 식탁에 물건 ${qty}개를 보탰어요.`)}else err('지원하지 않는 활동입니다.');
 await db.prepare('INSERT INTO commands(id,actor,room,kind,version1,version2,partner,state1,state2,room_version,offer,offer_data,item,qty,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(cmdId,p.id,room.id,kind,p.version,v2,partner,JSON.stringify(s),s2?JSON.stringify(s2):null,room.version,offerId,offerData?JSON.stringify(offerData):null,item,qty,now).run();return {ok:true}}
 export async function api(req,env){try{const u=new URL(req.url);if(!u.pathname.startsWith('/api/'))return null;const db=env.DB;if(!db)return json({error:'공동 플레이 서버가 연결되지 않았습니다.'},503);await init(db);if(u.pathname==='/api/health')return json({ok:true,storage:'server',version:6});const origin=req.headers.get('origin');if(origin&&origin!==u.origin)err('다른 사이트의 요청은 허용되지 않습니다.',403);const b=req.method==='POST'?await body(req):{};
-if(u.pathname==='/api/create'&&req.method==='POST'){if(!env.TEACHER_SETUP_KEY||await hash(String(b.setupKey||''))!==await hash(env.TEACHER_SETUP_KEY))err('교사 개설키를 확인해 주세요.',403);const size=int(b.size,1,120),id=random(),code=random(3).toUpperCase(),teacherKey=random(24),created=Date.now();const statements=[db.prepare('INSERT INTO rooms(id,code,teacher_hash,goal,created) VALUES(?,?,?,?,?)').bind(id,code,await hash(teacherKey),Math.max(2,Math.ceil(size/4)),created)];const students=[];for(let i=0;i<size;i++){const token=random(12),pid=random(),s=initial(i);students.push({name:s.name,code:token,role:s.job});statements.push(db.prepare('INSERT INTO players(id,room,name,token_hash,state) VALUES(?,?,?,?,?)').bind(pid,id,s.name,await hash(token),JSON.stringify(s)))}await db.batch(statements);return json({roomCode:code,teacherKey,students},201)}
-if(u.pathname==='/api/trial'&&req.method==='POST'){
+if(u.pathname==='/api/create'&&req.method==='POST'){
+ if(!env.TEACHER_SETUP_KEY||await hash(String(b.setupKey||''))!==await hash(env.TEACHER_SETUP_KEY))err('교사 개설키를 확인해 주세요.',403);
+ const size=int(b.size,1,120),mode=b.roleMode===undefined?null:roleMode(b.roleMode);
+ if(b.roleMode!==undefined&&!mode)err('직업 배정 방식을 선택해 주세요.');
+ const id=random(),code=random(3).toUpperCase(),teacherKey=random(24),created=Date.now(),jobs=mode==='balanced'?balancedRoles(size):[];
+ const statements=[db.prepare('INSERT INTO rooms(id,code,teacher_hash,goal,created) VALUES(?,?,?,?,?)').bind(id,code,await hash(teacherKey),Math.max(2,Math.ceil(size/4)),created)];
+ if(mode)statements.push(db.prepare('INSERT INTO role_policies(room,mode) VALUES(?,?)').bind(id,mode));
+ const students=[];
+ for(let i=0;i<size;i++){
+  const token=random(12),pid=random(),s=initial(i);
+  if(mode)assignRole(s,mode,jobs[i]||0);
+  students.push({name:s.name,code:token,role:s.rolePending?null:s.job});
+  statements.push(db.prepare('INSERT INTO players(id,room,name,token_hash,state) VALUES(?,?,?,?,?)').bind(pid,id,s.name,await hash(token),JSON.stringify(s)));
+ }
+ await db.batch(statements);
+ return json({roomCode:code,teacherKey,roleMode:mode||'legacy',students},201);
+}if(u.pathname==='/api/trial'&&req.method==='POST'){
 const token=String(b.key||'');if(!/^[a-f0-9]{32}$/.test(token))err('체험 입장 정보를 다시 만들어 주세요.');
 const tokenHash=await hash(token);const existing=await db.prepare('SELECT id FROM players WHERE token_hash=?').bind(tokenHash).first();
 if(!existing){await limiter(db,'trial:'+await hash(req.headers.get('cf-connecting-ip')||'local'),Date.now(),12);
@@ -72,6 +120,12 @@ await db.batch(statements);}
 const a=await auth(new Request(req.url,{headers:{authorization:'Bearer '+token}}),db);return json({...await snapshot(db,a),token});}
 if(u.pathname==='/api/join'&&req.method==='POST'){const roomCode=String(b.roomCode||'').replace(/\s/g,'').toUpperCase(),token=String(b.code||'').replace(/\s/g,'').toLowerCase();await limiter(db,'join:'+await hash((req.headers.get('cf-connecting-ip')||'local')+roomCode),Date.now(),160);let a;try{a=await auth(new Request(req.url,{headers:{authorization:'Bearer '+token}}),db)}catch(e){if(e.status===401)err('입장 코드가 맞지 않아요. 선생님이 준 코드를 다시 확인해 주세요.',401);throw e}if(a.room.code!==roomCode)err('학급 코드를 확인해 주세요.',401);if(a.player)await db.prepare('UPDATE players SET last_seen=? WHERE id=?').bind(Date.now(),a.player.id).run();return json({...await snapshot(db,a),token})}
 let a=await auth(req,db);const managed=b.managedRoom||u.searchParams.get('classroom');a=await managedAuth(db,a,managed);
+if(u.pathname==='/api/teacher/roles'&&req.method==='POST'){
+ if(!a.teacher)err('교사만 직업 배정 방식을 정할 수 있어요.',403);
+ const mode=roleMode(b.mode);if(!mode)err('직업 배정 방식을 선택해 주세요.');
+ const result=await setClassRoleMode(db,a.room.id,mode);
+ return json({...await snapshot(db,a),roleAssignment:result});
+}
 if(u.pathname==='/api/teacher/entry-links'&&req.method==='GET'){
  if(!a.teacher)err('교사만 학생 입장 링크를 만들 수 있어요.',403);
  const players=await db.prepare('SELECT id,name FROM players WHERE room=? ORDER BY name').bind(a.room.id).all();
@@ -120,4 +174,4 @@ if(u.pathname==='/api/story/goals'&&req.method==='POST'){await reduceMissionGoal
 if(u.pathname==='/api/state'&&req.method==='GET'){if(a.player&&a.player.last_seen<Date.now()-20000)await db.prepare('UPDATE players SET last_seen=? WHERE id=? AND last_seen<?').bind(Date.now(),a.player.id,Date.now()-20000).run();return json(await snapshot(db,a))}
 if(u.pathname==='/api/action'&&req.method==='POST'){if(!a.player)err('학생으로 입장해 주세요.',403);let result;for(let attempt=0;attempt<5;attempt++){const fresh=attempt?await auth(req,db):a;try{result=await mutation(db,fresh,b);break}catch(e){if(/STATE_CHANGED|ROOM_CHANGED|UNIQUE constraint failed: commands.id/.test(e.message)&&attempt<4)continue;throw e}}const updated=await auth(req,db);return json({...result,...await snapshot(db,updated,!['offer','accept','cancel'].includes(b.action))})}
 if(u.pathname==='/api/teacher'&&req.method==='POST'){if(!a.teacher)err('교사만 사용할 수 있어요.',403);const day=int(b.day,1,365),weather=int(b.weather,0,5);if(!['개인 성장','협력'].includes(b.phase))err('시즌을 선택해 주세요.');await db.prepare('UPDATE rooms SET day=?,weather=?,market=?,paused=?,phase=?,version=version+1 WHERE id=?').bind(day,weather,b.market?1:0,b.paused?1:0,b.phase,a.room.id).run();return json(await snapshot(db,await managedAuth(db,await auth(req,db),managed)))}
-return json({error:'경로를 찾을 수 없습니다.'},404)}catch(e){const text=String(e.message);if(!e.status)console.error("API storage failure",text.slice(0,240));if(/SEAT_FULL|UNIQUE constraint failed: study_seats.room/.test(text))return json({error:'다른 친구가 먼저 앉았거나 만석이에요. 빈자리를 다시 골라 주세요.'},409);if(/SEAT_PERMISSION/.test(text))return json({error:'공부방이나 여행이 닫혔어요. 선생님의 운영 설정을 확인해 주세요.'},423);const conflict=/GARDEN_|SEAT_|UNIQUE constraint failed: study_seats|CAMPUS_OWNERSHIP|CAMPUS_FULL|UNIQUE constraint failed: study_sessions|MISSION_|STATE_CHANGED|ROOM_CHANGED|OFFER_CLOSED|MARKET_CLOSED|CHECK constraint/.test(text);return json({error:conflict?'상태가 바뀌었어요. 새로 반영된 내용을 보고 다시 시도해 주세요.':e.status?text:'처리하지 못했어요. 잠시 후 같은 요청을 다시 시도해 주세요.'},e.status||(conflict?409:500))}}
+return json({error:'경로를 찾을 수 없습니다.'},404)}catch(e){const text=String(e.message);if(!e.status)console.error("API storage failure",text.slice(0,240));if(/SEAT_FULL|UNIQUE constraint failed: study_seats.room/.test(text))return json({error:'다른 친구가 먼저 앉았거나 만석이에요. 빈자리를 다시 골라 주세요.'},409);if(/SEAT_PERMISSION/.test(text))return json({error:'공부방이나 여행이 닫혔어요. 선생님의 운영 설정을 확인해 주세요.'},423);if(/ROLE_FULL/.test(text))return json({error:'이 직업은 정원이 찼어요. 다른 직업을 골라 주세요.'},409);const conflict=/GARDEN_|SEAT_|UNIQUE constraint failed: study_seats|CAMPUS_OWNERSHIP|CAMPUS_FULL|UNIQUE constraint failed: study_sessions|MISSION_|STATE_CHANGED|ROOM_CHANGED|OFFER_CLOSED|MARKET_CLOSED|CHECK constraint/.test(text);return json({error:conflict?'상태가 바뀌었어요. 새로 반영된 내용을 보고 다시 시도해 주세요.':e.status?text:'처리하지 못했어요. 잠시 후 같은 요청을 다시 시도해 주세요.'},e.status||(conflict?409:500))}}

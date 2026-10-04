@@ -3,6 +3,17 @@
 // A student begins as a vegetable farmer, then chooses one lasting specialty.
 // The server validates eligibility; this UI only explains it before sending an action.
 function showSchoolCareers(){
+ if(state.rolePending){
+  const players=window.classroomData?.players||[],limit=Math.ceil(players.length/4),counts=[0,0,0,0];
+  for(const player of players)if(!player.rolePending&&Number.isInteger(player.job))counts[player.job]++;
+  const choices=jobs.map((job,index)=>`<button type="button" class="wide" data-first-role="${index}" ${counts[index]>=limit?'disabled':''}>${job.icon} ${job.name} · ${counts[index]}/${limit}명${counts[index]>=limit?' · 정원 마감':''}</button>`).join('');
+  modal(`<h2>우리 반에서 맡을 일을 골라요</h2><p>직업별 정원이 있어 먼저 선택한 학생부터 확정됩니다. 농장은 모두 가꿀 수 있고, 운송·품질 확인 같은 협력 활동에도 참여할 수 있어요.</p>${choices}<p id="firstRoleFeedback" role="status"></p>`);
+  return;
+ }
+ if(state.roleAssigned){
+  modal(`<h2>우리 반에서 맡은 일</h2><p>${jobs[state.job].icon} ${jobs[state.job].name} 역할을 맡고 있어요. 내 밭도 가꾸고, 운송·품질 확인 같은 협력 활동에도 참여할 수 있어요.</p><button class="wide quiet" data-close>계속하기</button>`);
+  return;
+ }
  const picked=state.farm?.picked||0;
  const specialized=!!state.specialized||(state.job!==0&&picked>=16);
  const roles=jobs.map((job,index)=>{
@@ -15,6 +26,19 @@ function showSchoolCareers(){
  modal(`<h2>내 직업과 전문 역할</h2><p>모두 상추밭에서 시작해요. 누적 수확 16개가 되면 과수·물가 역할을, 80개가 되면 목장 역할도 고를 수 있어요.</p><div class="notice">내 수확 ${picked}개 · ${specialized?'전문 역할을 이미 골랐어요.':'전문 역할은 한 번 선택하면 유지돼요. 기존 밭과 물건은 그대로 남아요.'}</div>${roles}<button class="wide quiet" data-close>계속하기</button>`);
 }
 window.showSchoolCareers=showSchoolCareers;
+
+document.addEventListener('click',async event=>{
+ const choice=event.target.closest('[data-first-role]');if(!choice||choice.disabled)return;
+ choice.disabled=true;
+ const job=Number(choice.dataset.firstRole),feedback=$('#firstRoleFeedback');
+ feedback.textContent='직업을 확인하고 있어요.';
+ if(await schoolAction({action:'job',job})){
+  close();toast(`${jobs[job].name} 역할이 정해졌어요.`);
+ }else{
+  feedback.textContent=window.schoolLastActionError||'다시 선택해 주세요.';
+  choice.disabled=false;
+ }
+});
 
 document.addEventListener('click',event=>{
  const choice=event.target.closest('[data-career-specialize]');if(!choice||choice.disabled)return;
