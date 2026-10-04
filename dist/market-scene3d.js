@@ -9,7 +9,7 @@ export function createMarketScene({onPeer,onSpot}){
  const load=url=>loader.loadAsync(url);
  let assets=null,avatar=null,renderer=null,scene=null,camera=null,canvas=null,host=null,latest=null,ambient=null,sun=null,ground=null,path=null,plaza=null,rain=null;
  const lanternGlows=[];
- let stalls=[],actors=new Map(),last=0,ready=false,failed=false,previousCount=0;
+ let stalls=[],actors=new Map(),last=0,ready=false,failed=false,previousCount=0,lastWidth=0,lastHeight=0;
  const palette=[0x659ac6,0xc77b8f,0x89a55b,0xeeb45c,0x9b86bd,0x57aaa0];
  const color=id=>palette[Array.from(id).reduce((n,c)=>n+c.charCodeAt(0),0)%palette.length];
  const spotPosition=(spot,mobile)=>new THREE.Vector3((spot%6-2.5)*(mobile?3:3.2),.1,1.15+Math.floor(spot/6)*1.15);
@@ -62,7 +62,7 @@ export function createMarketScene({onPeer,onSpot}){
  function removeActor(id){const a=actors.get(id);if(!a)return;scene.remove(a.group);a.mixer.stopAllAction();a.mixer.uncacheRoot(a.group.children[0]);a.changed.forEach(material=>material.dispose());actors.delete(id)}
  function play(a,name){if(a.current===name||!a.actions[name])return;if(a.current)a.actions[a.current].stop();a.actions[name].reset().play();if(name==='wave'){a.actions[name].setLoop(THREE.LoopOnce,1);a.actions[name].clampWhenFinished=true}a.current=name}
  function syncWeather(data){const storm=!!data.storm,powerOut=!!data.powerOut;scene.background.setHex(storm?0x8599a2:0xb8d69a);ambient.color.setHex(storm?0xc6d2d7:0xfff9e6);ambient.groundColor.setHex(storm?0x60777e:0x709869);ambient.intensity=storm?1.15:2;sun.color.setHex(storm?0xc5d2d8:0xffe6b4);sun.intensity=storm?.85:2;ground.material.color.setHex(storm?0x829a8a:0xb2d58f);path.material.color.setHex(storm?0xb4b7ae:0xf2dda9);plaza.material.color.setHex(storm?0xb8b4a9:0xe8d19a);rain.visible=storm;for(const entry of lanternGlows){entry.material.color.setHex(powerOut?0x64757b:entry.color);entry.material.emissiveIntensity=powerOut?0:entry.intensity}host.dataset.marketStorm=String(storm);host.dataset.marketRainVisible=String(rain.visible);host.dataset.marketLanternsLit=String(!powerOut)}
- function resize(){if(!host||!renderer)return;const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);const span=12.8,aspect=w/h;camera.left=-span*aspect/2;camera.right=span*aspect/2;camera.top=span/2;camera.bottom=-span/2;camera.position.set(0,10.5,15.5);camera.lookAt(0,.4,-.2);camera.updateProjectionMatrix()}
+ function resize(){if(!host||!renderer)return;const w=host.clientWidth,h=host.clientHeight;if(!w||!h||w===lastWidth&&h===lastHeight)return;lastWidth=w;lastHeight=h;renderer.setSize(w,h,false);const span=12.8,aspect=w/h;camera.left=-span*aspect/2;camera.right=span*aspect/2;camera.top=span/2;camera.bottom=-span/2;camera.position.set(0,10.5,15.5);camera.lookAt(0,.4,-.2);camera.updateProjectionMatrix()}
  function project(point){const v=point.clone().project(camera);return {x:(v.x*.5+.5)*host.clientWidth,y:(-v.y*.5+.5)*host.clientHeight}}
  function placeLabels(){if(!host||!latest)return;
   host.querySelectorAll('.market-stall').forEach((button,i)=>{const item=stalls[i];if(!item)return;const p=project(new THREE.Vector3(item.x,2.65,-1.8)),half=button.offsetWidth/2;button.style.left=Math.max(half+4,Math.min(host.clientWidth-half-4,p.x))+'px';button.style.top='58px'});
@@ -84,7 +84,7 @@ export function createMarketScene({onPeer,onSpot}){
  }
  function frame(now){requestAnimationFrame(frame);if(!renderer||!host||document.hidden||document.body.dataset.screen!=='market'||!host.isConnected)return;if(now-last<45)return;const dt=Math.min(.08,(now-last)/1000||.05);last=now;
   if(canvas.parentElement!==host)host.prepend(canvas);
-  if(canvas.width!==Math.round(host.clientWidth*renderer.getPixelRatio())||canvas.height!==Math.round(host.clientHeight*renderer.getPixelRatio()))resize();
+  if(host.clientWidth!==lastWidth||host.clientHeight!==lastHeight)resize();
   if(rain?.visible)rain.position.y=-((now/1000*2.5)%1.3);
   for(const a of actors.values()){const distance=a.group.position.distanceTo(a.target),moving=distance>.05;if(moving){a.group.position.lerp(a.target,Math.min(1,dt*5));a.group.rotation.y=Math.atan2(a.target.x-a.group.position.x,a.target.z-a.group.position.z)}play(a,moving?'walk':a.waving?'wave':'idle');a.mixer.update(dt)}
   camera.updateMatrixWorld();placeLabels();renderer.render(scene,camera);
@@ -99,8 +99,8 @@ export function createMarketScene({onPeer,onSpot}){
   const count=data.root.querySelectorAll('.market-stall').length;if(count!==previousCount)rebuildStalls(count);
   stalls.forEach((stall,i)=>{stall.peer=data.shown[i]?.id||null});
   host.dataset.stallOwners=JSON.stringify(stalls.map(stall=>stall.peer));
-  const mobile=host.clientWidth<850,rows=data.visitors.filter(row=>row.id===data.me.id||data.visitors.findIndex(v=>v.id===row.id)<(mobile?5:9));
-  if(!rows.some(row=>row.id===data.me.id))rows.unshift({id:data.me.id,spot:data.spot});
+  const mobile=host.clientWidth<850,own=data.visitors.find(row=>row.id===data.me.id)||{id:data.me.id,spot:data.spot};
+  const rows=[own,...data.visitors.filter(row=>row.id!==data.me.id).slice(0,mobile?4:8)];
   if(data.trial){const guide=data.shown.find(peer=>peer.id&&peer.id!==data.me.id&&!rows.some(row=>row.id===peer.id));if(guide)rows.push({id:guide.id,spot:9,practice:true})}
   const ids=new Set(rows.map(row=>row.id));for(const id of actors.keys())if(!ids.has(id))removeActor(id);
   for(const row of rows){const a=actors.get(row.id)||makeActor(row);a.target.copy(spotPosition(row.id===data.me.id?data.spot:row.spot,mobile));if(!a.group.userData.placed){a.group.position.copy(a.target);a.group.userData.placed=true}a.waving=row.greeting==='wave';for(const material of a.changed.values()){material.transparent=!!row.away;material.opacity=row.away?.38:1;material.depthWrite=!row.away}}
