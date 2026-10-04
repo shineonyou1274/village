@@ -40,6 +40,54 @@ async function setClassRoleMode(db,room,mode){
  ]);
  return {changed:eligible.length,preserved:rows.length-eligible.length};
 }
+async function classResetBackup(db,room){
+ const queries={
+  rooms:'SELECT id,code,day,weather,market,paused,phase,coop,goal,version,created FROM rooms WHERE id=?',
+  role_policies:'SELECT room,mode FROM role_policies WHERE room=?',
+  players:'SELECT id,room,name,state,version,last_seen FROM players WHERE room=?',
+  commands:'SELECT * FROM commands WHERE room=?',
+  offers:'SELECT * FROM offers WHERE room=?',
+  plaza_visitors:'SELECT * FROM plaza_visitors WHERE room=?',
+  market_visitors:'SELECT * FROM market_visitors WHERE room=?',
+  missions:'SELECT * FROM missions WHERE room=?',
+  mission_contributions:'SELECT * FROM mission_contributions WHERE room=?',
+  garden_totals:'SELECT * FROM garden_totals WHERE room=?',
+  garden_roles:'SELECT * FROM garden_roles WHERE room=?',
+  garden_seasons:'SELECT * FROM garden_seasons WHERE room=?',
+  garden_participants:'SELECT * FROM garden_participants WHERE room=?',
+  garden_archive:'SELECT * FROM garden_archive WHERE room=?',
+  growth_policy:'SELECT * FROM growth_policy WHERE room=?',
+  growth_schooldays:'SELECT * FROM growth_schooldays WHERE room=?',
+  growth_badges:'SELECT * FROM growth_badges WHERE actor IN (SELECT id FROM players WHERE room=?)',
+  passports:'SELECT * FROM passports WHERE actor IN (SELECT id FROM players WHERE room=?)',
+  stamps:'SELECT * FROM stamps WHERE actor IN (SELECT id FROM players WHERE room=?)',
+  study_sessions:'SELECT * FROM study_sessions WHERE room=?',
+  study_seats:'SELECT * FROM study_seats WHERE room=?'
+ };
+ const entries=await Promise.all(Object.entries(queries).map(async([name,sql])=>[name,(await db.prepare(sql).bind(room).all()).results]));
+ return {exportedAt:new Date().toISOString(),room,records:Object.fromEntries(entries)};
+}
+async function resetClassActivity(db,room,mode){
+ const players=(await db.prepare('SELECT id,name FROM players WHERE room=? ORDER BY name').bind(room).all()).results;
+ const jobs=mode==='balanced'?balancedRoles(players.length):[];
+ const statements=[
+  db.prepare('DELETE FROM study_seats WHERE room=?').bind(room),
+  db.prepare('DELETE FROM study_sessions WHERE room=?').bind(room),
+  db.prepare('DELETE FROM stamps WHERE actor IN (SELECT id FROM players WHERE room=?)').bind(room),
+  db.prepare('DELETE FROM passports WHERE actor IN (SELECT id FROM players WHERE room=?)').bind(room),
+  db.prepare('DELETE FROM growth_badges WHERE actor IN (SELECT id FROM players WHERE room=?)').bind(room),
+  ...['growth_schooldays','garden_archive','garden_participants','garden_roles','garden_totals','garden_seasons','mission_contributions','missions','market_visitors','plaza_visitors','offers','commands']
+   .map(table=>db.prepare(`DELETE FROM ${table} WHERE room=?`).bind(room)),
+  db.prepare('INSERT INTO role_policies(room,mode) VALUES(?,?) ON CONFLICT(room) DO UPDATE SET mode=excluded.mode').bind(room,mode),
+  db.prepare("UPDATE rooms SET day=1,weather=0,market=0,paused=1,phase='개인 성장',coop='[0,0,0,0]',goal=?,version=version+1 WHERE id=?").bind(Math.max(2,Math.ceil(players.length/4)),room),
+  ...players.map((p,i)=>{
+   const state=initial(i);state.name=p.name;assignRole(state,mode,jobs[i]||0);
+   return db.prepare('UPDATE players SET state=?,version=version+1,last_seen=0 WHERE id=? AND room=?').bind(JSON.stringify(state),p.id,room);
+  })
+ ];
+ await db.batch(statements);
+ return {students:players.length,mode,paused:true};
+}
 const tradeNames=['상추','우유','사과','생선','당근','토마토','감자','딸기'];
 const factors=[[1,1,1,1],[1.25,1.2,1.3,1.1],[1.1,1.15,.9,1.2],[1.4,1.35,1.2,1.5],[1.1,1.05,1.1,1.2],[.8,.95,.8,1]];
 function price(room,item){return Math.round([10,14,12,16][item]*factors[room.weather][item])}
@@ -125,6 +173,19 @@ if(u.pathname==='/api/teacher/roles'&&req.method==='POST'){
  const mode=roleMode(b.mode);if(!mode)err('직업 배정 방식을 선택해 주세요.');
  const result=await setClassRoleMode(db,a.room.id,mode);
  return json({...await snapshot(db,a),roleAssignment:result});
+}
+if(u.pathname==='/api/teacher/reset-backup'&&req.method==='GET'){
+ if(!a.teacher)err('교사만 학급 기록을 내려받을 수 있어요.',403);
+ return json(await classResetBackup(db,a.room.id));
+}
+if(u.pathname==='/api/teacher/reset'&&req.method==='POST'){
+ if(!a.teacher)err('교사만 학급을 초기화할 수 있어요.',403);
+ if(String(b.classCode||'').trim().toUpperCase()!==a.room.code||b.confirm!=='RESET_CLASS_ACTIVITY')err('초기화할 학급 코드를 정확히 입력해 주세요.',400);
+ if(!Number.isInteger(b.expectedRoomVersion)||b.expectedRoomVersion!==a.room.version)err('백업 이후 학급 상태가 바뀌었어요. 현재 기록을 다시 내려받아 확인해 주세요.',409);
+ const mode=roleMode(b.mode);if(!mode)err('초기화 후 직업 배정 방식을 선택해 주세요.');
+ const result=await resetClassActivity(db,a.room.id,mode);
+ const fresh=await managedAuth(db,await auth(req,db),managed);
+ return json({...await snapshot(db,fresh),reset:result});
 }
 if(u.pathname==='/api/teacher/entry-links'&&req.method==='GET'){
  if(!a.teacher)err('교사만 학생 입장 링크를 만들 수 있어요.',403);
