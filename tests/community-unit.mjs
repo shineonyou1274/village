@@ -8,8 +8,9 @@ ok(await req('/api/teacher',{day:1,weather:0,market:true,paused:false,phase:'협
 ok(await act({action:'produce'}));ok(await act({action:'produce'}));ok(await act({action:'produce'}));
 ok(await act({action:'sell',item:0,qty:1}));ok(await act({action:'quiz',answer:0}));ok(await act({action:'expand'}));ok(await act({action:'crop_sell',crop:0,qty:2}));
 const gift={action:'crop_donate',crop:0,qty:1,season:1,requestId:'community-gift-once'};ok(await req('/api/action',gift,student));ok(await req('/api/action',gift,student));ok(await act({action:'donate',item:0,qty:1}));
-let board=ok(await req('/api/community',null,student));assert.equal(board.players.length,2);const me=board.players.find(p=>p.isMe);assert.equal(me.sales,30);assert.equal(me.donated,2);assert.equal(board.players.find(p=>!p.isMe).sales,0);assert.deepEqual(Object.keys(me).sort(),['donated','isMe','name','sales']);
-const peer=ok(await req('/api/community',null,room.students[1].code));assert.equal(peer.players.find(p=>!p.isMe).sales,30);
+let board=ok(await req('/api/community',null,student));assert.equal(board.players.length,1);assert.deepEqual(board.totals,{sales:30,donated:2});const me=board.players[0];assert.equal(me.sales,30);assert.equal(me.donated,2);assert.deepEqual(Object.keys(me).sort(),['donated','isMe','name','sales']);
+const peer=ok(await req('/api/community',null,room.students[1].code));assert.equal(peer.players.length,1);assert.equal(peer.players[0].sales,0);assert.equal(peer.totals.sales,30);
+const teacher=ok(await req('/api/community',null,room.teacherKey));assert.equal(teacher.players.length,2);assert.equal(teacher.totals.sales,30);
 const other=(await req('/api/create',{setupKey:'test-key',size:1})).data;assert.equal(ok(await req('/api/community',null,other.students[0].code)).players.length,1);assert.equal((await req('/api/community')).status,401);
-console.log('PASS community: sales exclude rewards/spending, donations deduplicated, peer visibility, class isolation, limited fields, authentication');
+console.log('PASS community: sales exclude rewards/spending, donations deduplicated, student privacy, teacher roster, class isolation, authentication');
 }finally{Date.now=realNow;sql.close()}

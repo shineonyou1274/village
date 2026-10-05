@@ -237,7 +237,8 @@ FROM commands WHERE room=?
 ) SELECT actor,SUM(CASE WHEN kind IN ('sell','crop_sell') THEN MAX(0,coins-previous) ELSE 0 END) sales,
 SUM(CASE WHEN kind IN ('donate','crop_donate','mission_donate') THEN qty ELSE 0 END) donated FROM history GROUP BY actor`).bind(a.room.id).all();
 const totals=new Map(rows.results.map(r=>[r.actor,r]));const people=await db.prepare('SELECT id,name,state FROM players WHERE room=? ORDER BY name').bind(a.room.id).all();
-return json({asOf:Date.now(),players:people.results.map(p=>({name:JSON.parse(p.state).name||p.name,isMe:p.id===a.player?.id,sales:totals.get(p.id)?.sales||0,donated:totals.get(p.id)?.donated||0}))})}
+const players=people.results.map(p=>({name:JSON.parse(p.state).name||p.name,isMe:p.id===a.player?.id,sales:totals.get(p.id)?.sales||0,donated:totals.get(p.id)?.donated||0}));
+return json({asOf:Date.now(),totals:{sales:players.reduce((n,p)=>n+p.sales,0),donated:players.reduce((n,p)=>n+p.donated,0)},players:a.teacher?players:players.filter(p=>p.isMe)})}
 if(u.pathname.startsWith('/api/growth'))return json(await growthApi(db,a,u.pathname,b,req.method));if(u.pathname.startsWith('/api/campus'))return json(await campusApi(db,a,u.pathname,b,req.method));if(u.pathname==='/api/story/start'&&req.method==='POST'){await startMission(db,a,b);return json(await snapshot(db,await managedAuth(db,await auth(req,db),managed)))}
 if(u.pathname==='/api/story/goals'&&req.method==='POST'){await reduceMissionGoals(db,a,b);return json(await snapshot(db,await managedAuth(db,await auth(req,db),managed)))}
 if(u.pathname==='/api/state'&&req.method==='GET'){if(a.player&&a.player.last_seen<Date.now()-20000)await db.prepare('UPDATE players SET last_seen=? WHERE id=? AND last_seen<?').bind(Date.now(),a.player.id,Date.now()-20000).run();return json(await snapshot(db,a))}

@@ -41,6 +41,7 @@
  const openQuiz=()=>{
   if(campus){location.href='index.html#quiz';return}
   if((document.querySelector('#dialog')?.open&&document.querySelector('#schoolEntry'))){note('학생 코드로 입장하면 오늘의 직업 퀴즈를 풀 수 있어요.');return}
+  if(window.classroomActive&&window.classroomData?.room?.paused){note('선생님이 수업을 잠시 멈추었어요. 다시 시작하면 퀴즈를 풀 수 있어요.');return}
   if(state.job===null){note('먼저 내 직업을 선택해 주세요.');document.querySelector('#jobs').click();return}
   if(state.quizDay===state.day){note('오늘 퀴즈를 완료했어요! 다음 수업일에 다시 도전해요.');return}
   quiz('daily');

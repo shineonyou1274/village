@@ -18,9 +18,9 @@ const moved=ok(await req('/api/plaza',null,b)).visitors.find(p=>p.id===me);asser
 ok(await req('/api/plaza',{action:'wave'},a));assert(ok(await req('/api/plaza',null,b)).visitors.find(p=>p.id===me).wave);
 assert.equal((await req('/api/plaza',{action:'wave'},a)).status,429);
 clock+=5000;assert(!ok(await req('/api/plaza',null,b)).visitors.find(p=>p.id===me).wave);
-clock+=16000;assert.equal(ok(await req('/api/plaza',null,b)).visitors.length,0);
-ok(await req('/api/plaza',{action:'visit'},a));assert.equal(ok(await req('/api/plaza',null,b)).visitors.length,1);
-ok(await req('/api/plaza',{action:'leave'},a));assert.equal(ok(await req('/api/plaza',null,b)).visitors.length,0);
+clock+=16000;d=ok(await req('/api/plaza',null,b));assert.equal(d.visitors.length,30);assert(d.visitors.every(p=>p.away));
+ok(await req('/api/plaza',{action:'visit'},a));d=ok(await req('/api/plaza',null,b));assert.equal(d.visitors.filter(p=>!p.away).length,1);
+ok(await req('/api/plaza',{action:'leave'},a));d=ok(await req('/api/plaza',null,b));assert(d.visitors.every(p=>p.away));
 const after=ok(await req('/api/state',null,a));assert.deepEqual(after.me.state,before.me.state);
 await req('/api/teacher',{day:1,weather:0,market:false,paused:true,phase:'개인 성장'},room.teacherKey);assert.equal((await req('/api/plaza',{action:'visit'},a)).status,423);
 console.log('PASS: 30 distinct arrivals, class isolation, bounds, authentication, server speed, greeting cooldown/expiry, departure/TTL/reconnect, unchanged inventory, teacher pause');

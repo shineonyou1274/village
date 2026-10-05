@@ -13,6 +13,7 @@ export function createPlaza({world,viewport,template,camera,enterMarket}){
  const actors=new Map(),clock=()=>performance.now();let overview=false,joined=false,token='',timer=0,busy=false,generation=0,rows=[],queued=null,wave=false,gate=false,lastOK=0,paused=false,failed=false,localWaveUntil=0,avatarFactory=null,lastTick=clock();
  // Both modes pause when hidden; trial avatars still use local presence, not a server connection.
  const active=()=>document.body.dataset.screen==='village'&&window.classroomActive&&!document.hidden;
+ const classPaused=()=>!state.trial&&!!classroomData?.room?.paused;
  function guidance(){const local=!window.classroomActive;ui.querySelector('p').textContent=overview?'전체 지도를 보고 있어요. 내 캐릭터로 걸으려면 ‘광장으로 돌아오기’를 누르세요.':local?'농사만 혼자 연습 중이에요. 친구와 장터를 둘러보려면 체험 마을에 입장하세요.':document.hidden?'화면으로 돌아오면 다시 연결됩니다. 돌아온 뒤 내 캐릭터가 나타나면 걸을 수 있어요.':paused?'선생님이 활동을 잠시 멈췄어요. 수업이 다시 시작되면 걸을 수 있어요.':failed?'광장 연결을 다시 확인하고 있어요. 연결되면 내 캐릭터와 함께 걸을 수 있어요.':!joined?'광장에 입장하고 있어요. 내 캐릭터가 나타나면 이동할 수 있어요.':'내 캐릭터가 있는 광장이에요. 땅이나 방향키로 걸어 장터 입구까지 가 보세요.';const b=ui.querySelector('[data-plaza-market]');b.textContent=local?'체험 마을로 입장':gate?'장터로 걷는 중…':'장터까지 걷기';b.disabled=!local&&(document.hidden||!joined||failed||paused||gate);}
  const status=t=>{const e=ui.querySelector('.plaza-connection');if(e.textContent!==t)e.textContent=t;guidance();};
  const current=p=>{const dx=p.tx-p.x,dz=p.tz-p.z,d=Math.hypot(dx,dz),f=d?Math.min(1,(clock()-p.received)/1000*3/d):1;return {x:p.x+dx*f,z:p.z+dz*f};};
@@ -20,8 +21,9 @@ export function createPlaza({world,viewport,template,camera,enterMarket}){
  function removeActor(actor){root.remove(actor.g);actor.dispose?.();actor.g.traverse(o=>{if(o.userData.plazaMaterial)o.material.dispose()});actor.label.remove()}
  function clear(){for(const actor of actors.values())removeActor(actor);actors.clear();rows=[];}
  async function leave(t){if(t&&!state.trial)try{await schoolFetch('/api/plaza',{action:'leave'},t)}catch{}}
+ function pauseConnection(){if(paused&&!token)return;generation++;clearTimeout(timer);const old=token;token='';joined=false;gate=false;queued=null;lastOK=0;clear();paused=true;failed=false;leave(old);status('선생님이 수업을 잠시 멈추었어요.')}
  async function poll(){
-  if(!active()||busy)return;
+  if(!active()||busy)return;if(classPaused()){pauseConnection();return}
   busy=true;const t=schoolToken,gen=generation,destination=queued,greeting=wave;queued=null;wave=false;
   try{let data;
    if(state.trial){const self=rows.find(p=>p.id===classroomData.me.id),pos=self?current(self):{x:-1,z:-12};if(greeting)localWaveUntil=clock()+4000;data={paused:false,visitors:[{id:classroomData.me.id,name:state.name,...pos,tx:destination?.x??self?.tx??pos.x,tz:destination?.z??self?.tz??pos.z,wave:clock()<localWaveUntil},{id:'practice-guide',name:'연습 친구',x:2,z:-13,tx:2,tz:-13,wave:false}]};}
@@ -32,10 +34,10 @@ export function createPlaza({world,viewport,template,camera,enterMarket}){
    for(const p of rows){const a=actors.get(p.id)||make(p);a.label.textContent=(p.id===classroomData.me.id?p.name+' · 나':state.trial&&p.id==='practice-guide'?'연습 친구':p.name)+(p.wave?' 👋':'')+(p.atMarket?' · 장터에 있어요':p.away?' · 자리 비움':'');a.label.classList.toggle('is-me',p.id===classroomData.me.id);a.label.classList.toggle('is-practice',!!state.trial&&p.id==='practice-guide');a.label.classList.toggle('away',!!p.away);}
    const ids=new Set(rows.map(p=>p.id));for(const [id,a]of actors){if(!ids.has(id)){removeActor(a);actors.delete(id)}}
    const activeCount=rows.filter(p=>!p.away).length,awayCount=rows.filter(p=>p.away&&!p.atMarket).length;status(state.trial?'혼자 체험 중 · 연습 친구와 이동을 연습해요':`같은 광장에 ${activeCount}명${awayCount?` · 자리 비움 ${awayCount}명`:''} · 연결됨`);arrive();
-  }catch(e){if(gen===generation){failed=true;gate=false;status(e.message||'연결을 다시 확인하고 있어요.');if(clock()-lastOK>15000)clear();}}
-  finally{busy=false;if(active())timer=setTimeout(poll,1100+Math.random()*150);}
+  }catch(e){if(gen===generation){if(e.status===423){pauseConnection();refreshSchool();}else{failed=true;gate=false;status(e.message||'연결을 다시 확인하고 있어요.');if(clock()-lastOK>15000)clear();}}}
+  finally{busy=false;if(active()&&!classPaused()&&!paused)timer=setTimeout(poll,1100+Math.random()*150);}
  }
- function change(){const on=active();ui.hidden=document.body.dataset.screen!=='village';root.visible=on&&!overview;if(!on){generation++;clearTimeout(timer);const old=token;token='';joined=false;gate=false;queued=null;clear();leave(old);if(document.hidden)status('화면으로 돌아오면 다시 연결됩니다.');else guidance();return}if(token===schoolToken)return;token=schoolToken;generation++;lastOK=0;failed=false;clearTimeout(timer);status('입장을 확인하고 있어요.');poll();}
+ function change(){const on=active();ui.hidden=document.body.dataset.screen!=='village';root.visible=on&&!overview;if(!on){generation++;clearTimeout(timer);const old=token;token='';joined=false;gate=false;queued=null;clear();leave(old);if(document.hidden)status('화면으로 돌아오면 다시 연결됩니다.');else guidance();return}if(classPaused()){pauseConnection();return}paused=false;if(token===schoolToken)return;token=schoolToken;generation++;lastOK=0;failed=false;clearTimeout(timer);status('입장을 확인하고 있어요.');poll();}
  function destination(x,z,toMarket=false){if(!window.classroomActive){entrySchool();return}if(state.trial&&!joined)change();if(!active()||!joined||failed||paused){status(document.hidden?'화면으로 돌아오면 다시 연결됩니다.':paused?'선생님이 활동을 잠시 멈췄어요.':'광장에 다시 연결하고 있어요. 내 캐릭터가 나타나면 걸을 수 있어요.');return}queued={x:Math.max(-4.8,Math.min(4.8,x)),z:Math.max(-17,Math.min(-10.8,z))};gate=toMarket;guidance();clearTimeout(timer);if(!busy)poll();viewport.focus({preventScroll:true});}
  function arrive(){const self=rows.find(p=>p.id===classroomData?.me?.id);if(!self||!active()||!gate||failed||paused)return;const pos=current(self);if(Math.hypot(pos.x,pos.z+17)<.15){gate=false;enterMarket();}}
  function step(key){const self=rows.find(p=>p.id===classroomData?.me?.id);if(!self)return;const p=queued||current(self);const angle=Math.atan2(camera.position.x,camera.position.z+14);const dx=({left:-1,right:1}[key]||0)*1.2,dz=({up:-1,down:1}[key]||0)*1.2;destination(p.x+Math.cos(angle)*dx+Math.sin(angle)*dz,p.z-Math.sin(angle)*dx+Math.cos(angle)*dz);}
@@ -45,8 +47,8 @@ export function createPlaza({world,viewport,template,camera,enterMarket}){
  window.addEventListener('pagehide',()=>{if(token&&!state.trial)fetch('/api/plaza',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+token},body:JSON.stringify({action:'leave'}),keepalive:true}).catch(()=>{})});
  // Read-only telemetry for end-to-end movement assertions.
  return {get closeView(){return active()&&!overview},setAvatarFactory(factory){avatarFactory=factory;if(actors.size){clear();clearTimeout(timer);if(active())poll()}},sync:change,click(point,market){if(overview)return false;if(market)destination(0,-17,true);else destination(point.x,point.z);return true;},tick(){
-  ui.hidden=document.body.dataset.screen!=='village';if(active()&&!token)change();root.visible=active()&&!overview;
-  if(active()&&!state.trial&&lastOK&&clock()-lastOK>15000){failed=true;clear();status('연결이 끊겼어요. 다시 연결하고 있습니다.');}
+  ui.hidden=document.body.dataset.screen!=='village';if(active()&&classPaused()&&!paused)pauseConnection();else if(active()&&!classPaused()&&(!token||paused))change();root.visible=active()&&!overview;
+  if(active()&&!classPaused()&&!state.trial&&lastOK&&clock()-lastOK>15000){failed=true;clear();status('연결이 끊겼어요. 다시 연결하고 있습니다.');}
   const now=clock(),dt=Math.min(.1,Math.max(0,(now-lastTick)/1000));lastTick=now;
   const tags=[];
   for(const p of rows){const a=actors.get(p.id);if(!a)continue;const pos=current(p),moving=Math.hypot(p.tx-pos.x,p.tz-pos.z)>.08;a.g.position.set(pos.x,.1+(moving?Math.abs(Math.sin(now/90))*.035:0),pos.z);if(a.update)a.update(dt,moving,p.wave);else{const limbs=a.g.children[0]?.children;if(limbs?.[2]&&limbs?.[3]){limbs[2].rotation.x=moving?Math.sin(now/90)*.6:0;limbs[3].rotation.x=-limbs[2].rotation.x;}}if(moving)a.g.rotation.y=Math.atan2(p.tx-pos.x,p.tz-pos.z);const v=a.g.position.clone().add(new THREE.Vector3(0,2.3,0)).project(camera),x=(v.x*.5+.5)*viewport.clientWidth,y=(-v.y*.5+.5)*viewport.clientHeight;a.label.style.left=x+'px';a.label.style.top=y+'px';a.label.dataset.x=pos.x.toFixed(2);a.label.dataset.z=pos.z.toFixed(2);tags.push({a,p,x,y});}
