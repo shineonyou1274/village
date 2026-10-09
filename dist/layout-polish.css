@@ -136,3 +136,31 @@
  .compact-shell[data-screen=village] .plaza-actions>.map-view-settings{grid-column:6;grid-row:1;width:44px;justify-self:end}
  .compact-shell[data-screen=village] .plaza-actions>details>summary{width:44px;padding:8px}
 }
+/* Phone controls share the same actions as desktop; only their layout changes. */
+@media(max-width:600px){
+ .compact-shell header{height:46px!important;padding:5px 10px!important}
+ .compact-shell .compact-topline{padding:4px 10px;gap:4px}
+ .compact-shell .compact-tabs{padding:0 6px;gap:2px;margin:4px auto 8px}
+ .compact-shell .compact-tabs button{padding:8px 2px;min-height:44px;font-size:12px;white-space:nowrap}
+ .compact-shell main{padding:0 4px 8px!important}
+ .compact-shell .farm-scene.has-3d{padding:4px}
+ .farm-hud>*{min-height:44px;font-size:12px;padding:8px}
+ .farm-action-menu,.farm-seed-menu{top:58px;max-width:calc(100% - 16px)}
+ .farm-seed-menu{left:auto;right:8px}
+ .farm-action-menu>summary,.farm-seed-menu>summary{min-height:44px;font-size:12px}
+ .compact-shell .bed3d{display:flex;align-items:center;justify-content:center;gap:2px;width:48px;height:44px;min-width:48px;min-height:44px;padding:3px;border-radius:14px;font-size:14px}
+ .compact-shell .bed-status-icon{position:static;width:auto;height:auto;border:0;background:transparent;font-size:13px}
+ .compact-shell .farm3d-viewport .selected-bed-info,.compact-shell .farm3d-viewport .selected-bed-info.is-working{left:8px!important;right:8px!important;top:auto!important;bottom:58px!important;width:auto!important;max-width:none!important;grid-template-columns:minmax(0,1fr) 100px;padding:8px!important;gap:4px!important}
+ .compact-shell .farm3d-viewport .selected-bed-info:after{display:none}
+ .compact-shell .farm3d-viewport .selected-bed-info>.close-bed-info{min-height:44px;width:44px}
+ .compact-shell .farm3d-viewport .selected-bed-info>.selected-bed-action{grid-column:1;min-height:44px}
+ .compact-shell .farm3d-viewport .selected-bed-info>.smart-farm-bed-button{grid-column:2;min-height:44px;font-size:11px}
+ .compact-shell[data-screen=farm] .map-tools-row{right:8px;bottom:7px;gap:6px;padding:0}
+ .compact-shell[data-screen=farm] .map-tools-row>button,.compact-shell[data-screen=farm] .map-view-settings>summary{font-size:12px;padding:9px;min-height:44px}
+ .compact-shell[data-screen=farm] .farm-current-status{bottom:56px;font-size:12px}
+ .compact-shell[data-screen=farm] .farm3d-viewport:has(.selected-bed-info:not([hidden])) .farm-current-status{clip-path:inset(50%);width:1px;height:1px;padding:0}
+}
+@media(min-width:601px) and (pointer:coarse){
+ .compact-shell .bed3d{min-width:44px;min-height:44px;font-size:14px}
+ .compact-shell .farm3d-viewport .selected-bed-info>.close-bed-info{min-width:44px;min-height:44px}
+}
