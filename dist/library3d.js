@@ -33,7 +33,7 @@ if(interior&&seatTools&&floorList){
   const [x,z]=targets[zone];camera.position.set(x+5,13,z+13);camera.lookAt(x,.2,z);
   camera.left=-span*aspect;camera.right=span*aspect;camera.top=span;camera.bottom=-span;camera.updateProjectionMatrix();camera.updateMatrixWorld();
   for(const button of markers.querySelectorAll('[data-seat3d]')){
-   const spot=byNumber.get(Number(button.dataset.seat3d));const p=new THREE.Vector3(spot.x,1.12,spot.z).project(camera);
+   const spot=byNumber.get(Number(button.dataset.seat3d));const occupied=button.classList.contains('occupied');const p=new THREE.Vector3(spot.x,occupied?2.35:1.12,spot.z).project(camera);
    button.style.left=((p.x+1)*50)+'%';button.style.top=((1-p.y)*50)+'%';
    button.hidden=Math.abs(p.x)>1.04||Math.abs(p.y)>1.04;
   }
@@ -43,7 +43,7 @@ if(interior&&seatTools&&floorList){
   markers.replaceChildren();if(!latest||zone==='lounge')return;
   const seats=latest.seats||[];
   for(const spot of spots.filter(s=>s.zone===zone)){
-   const p=seats.find(s=>s.number===spot.number),mine=p?.actor===latest.actor,chosen=latest.pickedDesk?.room===latest.viewedHall&&latest.pickedDesk.number===spot.number;
+   const p=seats.find(s=>s.number===spot.number),mine=!!p&&p.actor===latest.actor,chosen=latest.pickedDesk?.room===latest.viewedHall&&latest.pickedDesk.number===spot.number;
    const button=document.createElement('button');button.type='button';button.className='library3d-seat'+(p?' occupied':'')+(mine?' mine':'')+(chosen?' picked':'');
    button.dataset.seat3d=String(spot.number);button.textContent=mine?'✦'+spot.number:String(spot.number);
    button.setAttribute('aria-label',`${spot.number}번 ${p?`${p.name} · ${p.status}`:'빈자리'}${mine?' · 내 자리':''}`);
@@ -64,7 +64,7 @@ if(interior&&seatTools&&floorList){
    if(!entry){
     const root=studentGltf.scene.clone(true);root.name=`student-seat-${person.number}`;
     root.traverse(node=>{if(node.isMesh&&node.material?.name==='shirt'){node.material=node.material.clone();node.material.color.setHex([0xc9877a,0x8cad91,0xd0a371,0xb3869a][person.number%4])}});
-    const sit=THREE.AnimationClip.findByName(studentGltf.animations,'sit');if(sit){const mixer=new THREE.AnimationMixer(root);mixer.clipAction(sit).play();mixer.update(.84)}
+    const sit=THREE.AnimationClip.findByName(studentGltf.animations,'sit');if(sit){const mixer=new THREE.AnimationMixer(root);const action=mixer.clipAction(sit);action.setLoop(THREE.LoopOnce,1);action.clampWhenFinished=true;action.play();mixer.update(sit.duration)}
     scene.add(root);entry={actor:person.actor,root};avatars.set(person.number,entry);
    }
    const rest=person.status==='쉬는 중';

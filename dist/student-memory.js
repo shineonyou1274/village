@@ -11,7 +11,7 @@
  window.StudentMemory={
   read,
   remember(yes){try{if(yes)localStorage.setItem(optKey,'yes');else{localStorage.removeItem(optKey);localStorage.removeItem(key)}}catch{}},
-  save(data,token){if(!token||data.me?.state?.trial)return;confirmTab();const room=String(data.room?.code||''),name=String(data.me?.accountName||data.me?.state?.name||'학생');try{if(optedIn()&&room)localStorage.setItem(key,JSON.stringify({room,name,token}))}catch{};if(new URLSearchParams(location.search).has('entry')){const url=new URL(location.href);url.searchParams.delete('entry');history.replaceState(null,'',url.pathname+url.search+url.hash)}},
+  save(data,token){if(!token)return;confirmTab();if(data.me?.state?.trial)return;const room=String(data.room?.code||''),name=String(data.me?.accountName||data.me?.state?.name||'학생');try{if(optedIn()&&room)localStorage.setItem(key,JSON.stringify({room,name,token}))}catch{};if(new URLSearchParams(location.search).has('entry')){const url=new URL(location.href);url.searchParams.delete('entry');history.replaceState(null,'',url.pathname+url.search+url.hash)}},
   forget(){this.remember(false)},
   restore(){
    if(location.hash.startsWith('#join=')){
