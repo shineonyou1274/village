@@ -15,3 +15,6 @@
 .first-harvest-notice{max-width:390px}.first-harvest-notice b{font-size:17px}.first-harvest-notice p{font-size:14px}
 @media(max-width:600px){.career-route{width:210px;padding:9px;right:8px;top:8px}.career-route .journey-next{font-size:12px}.journey-steps button{font-size:11px;min-height:36px}.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps):not([open]){bottom:64px;left:8px;max-width:155px}.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps)>summary{font-size:11px}.first-harvest-notice{right:12px;bottom:12px;width:calc(100% - 24px)}}
 @media(prefers-reduced-motion:reduce){.journey-yield{animation:none}}
+
+/* Keep Korean words intact in the requested intro and farm feedback. */
+.journey-intro h2,.journey-intro p,.selected-bed-info,.selected-bed-info b,.selected-bed-info button{word-break:keep-all;overflow-wrap:normal}
