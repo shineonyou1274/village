@@ -40,14 +40,14 @@
  }
  function sync(){
   const s=read();if(!s)return;
-  const job=Number.isInteger(s.job)?s.job:0,role=job===0?'채소 농부':jobs[job]?.name||'마을 일꾼';
+  const job=Number.isInteger(s.job)?s.job:0,role=['채소를 키우는 농부','젖소를 돌보는 목장 농부','과일나무를 가꾸는 농부','물고기를 기르는 양식 어부'][job]||'마을 일꾼';
   const mode=document.querySelector('#playMode');if(mode)mode.textContent=`${symbols[job]} ${role} · ${s.trial?'체험 마을':classroomData.room.code}`;
   const complete=[job===0?(s.farm?.picked||0)>0:!!record.produced,!!record.traded,!!record.contributed];
   const current=complete.findIndex(v=>!v),step=selectedStep??(current<0?2:current);
   const titles=[job===0?'상추 키워 수확하기':`${items[job]} 생산하기`,s.trial?'연습 친구 우유와 바꾸기':'다른 직업 친구와 교환하기','공동 식탁에 보태기'];
   if(route){route.hidden=document.body.dataset.screen!=='farm';const stamp=JSON.stringify([titles,complete,step,current]);if(snapshot!==stamp){snapshot=stamp;route.innerHTML=`<small>내 일이 한 끼가 되는 3단계</small><div class="journey-steps">${['생산','교환','기여'].map((t,i)=>`<button data-step="${i}" aria-label="${i+1}단계 ${titles[i]} ${complete[i]?'완료':'진행 중'}" aria-pressed="${step===i}">${complete[i]?'✓':i+1} ${t}</button>`).join('')}</div><button class="journey-next" data-go="${step}">${titles[step]} →</button>${current<0?'<p>다른 직업 친구가 없으면 식탁이 안 채워져요.</p>':''}`}}
   if(!intro){intro=document.createElement('dialog');intro.className='journey-intro';intro.setAttribute('aria-labelledby','journeyIntroTitle');intro.innerHTML='<small>SHINY VILLAGE · 진로 체험 마을</small><h2 id="journeyIntroTitle"></h2><p></p><button class="primary">시작하기</button>';document.body.append(intro);const done=()=>{record.intro=true;persist()};intro.querySelector('button').onclick=()=>{done();intro.close()};intro.addEventListener('cancel',done)}
-  if(!record.intro&&!document.querySelector('dialog[open]')&&!s.rolePending){intro.querySelector('h2').textContent=`너는 이 마을의 ${role}예요.`;intro.querySelector('p').textContent=`혼자서는 식탁을 채울 수 없어요. 친구의 ${items.slice(0,4).filter((_,i)=>i!==job).join('·')}도 필요해요.`;intro.showModal()}
+  if(!record.intro&&!document.querySelector('dialog[open]')&&!s.rolePending){intro.querySelector('h2').textContent=`이 마을에서 ${role}예요.`;intro.querySelector('p').textContent=`혼자서는 식탁을 다 채울 수 없어요. 친구의 ${items.slice(0,4).filter((_,i)=>i!==job).join('·')}${job===3?'가':'이'} 필요해요.`;intro.showModal()}
  }
  function mount(viewport,goalButton,actions){
   goalButton.classList.add('journey-old-goal');const growth=document.createElement('button');growth.textContent='🌱 농장 성장';growth.onclick=()=>goalButton.click();actions.append(growth);
