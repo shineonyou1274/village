@@ -1,0 +1,17 @@
+/* Presentation only: compact map goals, one action message, readable progress. */
+.journey-old-goal{display:none!important}
+.career-route{position:absolute;right:10px;top:10px;width:260px;z-index:14;padding:12px;background:#fffef2ed;border:1px solid #bdcfb1;border-radius:16px;box-sizing:border-box;box-shadow:0 4px 15px #243e2517}
+.career-route[hidden]{display:none}.career-route small{display:block;font-size:11px;color:#637752;margin-bottom:7px}
+.journey-steps{display:flex;gap:4px}.journey-steps button{flex:1;min-height:36px;padding:6px;border:0;border-radius:8px;background:#e8eddc;font-size:12px;color:#35533e}.journey-steps button[aria-pressed=true]{background:#315b46;color:white}
+.career-route .journey-next{width:100%;min-height:40px;padding:8px 0 0;border:0;background:none;text-align:left;font-size:13px;font-weight:700;color:#2d4e3a}.career-route p{font-size:12px;line-height:1.5;margin:8px 0 0}
+.journey-intro{width:min(420px,calc(100% - 40px));padding:28px;border:1px solid #bbcca6;border-radius:22px;background:#fffef4;box-sizing:border-box;color:#294a3a}.journey-intro::backdrop{background:#183b2c66}.journey-intro small{font-size:11px;color:#6b7c58}.journey-intro h2{font-size:24px;line-height:1.4}.journey-intro p{font-size:16px;line-height:1.7}.journey-intro button{width:100%;min-height:44px;border-radius:12px}
+.journey-food{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}.journey-food button{min-height:44px}
+.journey-yield{position:absolute;left:50%;top:40%;transform:translateX(-50%);z-index:20;background:#fff9da;color:#325a35;border-radius:24px;padding:10px 18px;font-size:20px;font-weight:bold;pointer-events:none;animation:journey-rise 1.6s ease-out forwards}@keyframes journey-rise{0%{opacity:0;translate:0 8px}20%{opacity:1}80%{opacity:1}100%{opacity:0;translate:0 -24px}}
+.compact-shell #farmerStatus[hidden]{display:none!important}
+.compact-shell .farm-seed-menu{top:auto!important;bottom:66px!important}
+.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps):not([open]){top:auto!important;bottom:12px;left:12px;transform:none;max-width:210px}
+.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps)[open]{top:145px;max-height:calc(100% - 220px)}
+.passport-medal progress{width:100%;height:9px;accent-color:#3f7655}
+.first-harvest-notice{max-width:390px}.first-harvest-notice b{font-size:17px}.first-harvest-notice p{font-size:14px}
+@media(max-width:600px){.career-route{width:210px;padding:9px;right:8px;top:8px}.career-route .journey-next{font-size:12px}.journey-steps button{font-size:11px;min-height:36px}.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps):not([open]){bottom:64px;left:8px;max-width:155px}.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps)>summary{font-size:11px}.first-harvest-notice{right:12px;bottom:12px;width:calc(100% - 24px)}}
+@media(prefers-reduced-motion:reduce){.journey-yield{animation:none}}
