@@ -1,0 +1,57 @@
+/* One shared toolbar, with the same controls and handlers on every student page. */
+.compact-shell .play-shell-bar{position:relative;z-index:40;display:grid;grid-template-columns:auto minmax(80px,1fr) minmax(110px,1.3fr) auto auto auto auto;grid-template-areas:"brand mode weather tabs wallet prices menu";align-items:center;gap:8px;height:64px;box-sizing:border-box;padding:0 16px;background:#fff;border-bottom:1px solid #dbe4dc}
+.compact-shell .play-shell-bar header,.compact-shell .play-shell-bar .compact-topline{display:contents!important}
+.compact-shell .play-shell-bar .brand{grid-area:brand;font-size:18px!important;white-space:nowrap;margin:0;padding:0}
+.compact-shell .play-shell-bar .brand-icon,.compact-shell .play-shell-bar .brand small,.compact-shell .play-shell-bar #seasonBadge{display:none!important}
+.compact-shell .play-shell-bar #playMode{grid-area:mode;min-width:0;width:100%;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 4px;background:transparent;border:0;min-height:40px}
+.compact-shell .play-shell-bar #compactWeather{grid-area:weather;min-width:0;font-size:12px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:8px 2px}
+.compact-shell .play-shell-bar .wallet{grid-area:wallet;white-space:nowrap;gap:4px;font-size:13px;padding:6px 8px;margin:0;min-width:0}
+.compact-shell .play-shell-bar .wallet strong{font-size:16px}.compact-shell .play-shell-bar .wallet>span{display:none}
+.compact-shell .play-shell-bar #compactPrices{grid-area:prices}.compact-shell .play-shell-bar #compactMenuButton{grid-area:menu}
+.compact-shell .play-shell-bar #compactPrices,.compact-shell .play-shell-bar #compactMenuButton{white-space:nowrap;font-size:12px;min-height:40px;padding:8px;background:#edf2ed;border:0;border-radius:9px}
+.compact-shell .play-shell-bar .compact-tabs{grid-area:tabs;display:flex!important;position:static;width:auto;max-width:none;gap:2px;margin:0;padding:0;background:transparent;border:0}
+.compact-shell .play-shell-bar .compact-tabs button{flex:0 0 auto;white-space:nowrap;min-height:40px;padding:8px 10px;font-size:13px;border-radius:9px}
+.compact-shell .play-shell-bar .compact-price-box{top:calc(100% + 4px);right:8px;z-index:50}
+.compact-shell .class-pause-banner{margin:0;max-width:none;border-radius:0}
+/* The maps use the available viewport, never a fixed maximum height. */
+.compact-shell:is([data-screen=farm],[data-screen=village],[data-screen=market]) main{width:100%;max-width:none;margin:0!important;padding:0!important}
+.compact-shell:is([data-screen=farm],[data-screen=village]) .farm-scene.has-3d{padding:0!important;margin:0;border:0;border-radius:0}
+.compact-shell:is([data-screen=farm],[data-screen=village]) .farm3d-viewport.has-farm-hud{height:max(420px,calc(100dvh - var(--shell-height,64px)))!important;min-height:420px!important;max-height:none!important;border-radius:0}
+.compact-shell:is([data-screen=farm],[data-screen=village],[data-screen=market]){padding-bottom:0!important}
+.compact-shell[data-screen=village] .farm-top{display:none!important}
+.compact-shell:is([data-screen=farm],[data-screen=village]) .farm-scene.has-3d{min-height:0!important}
+.compact-shell[data-screen=market] :is(aside,#panel){padding:0!important;margin:0!important;border:0!important;border-radius:0!important}
+.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps){position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:15;width:max-content;max-width:calc(100% - 24px);margin:0;padding:0;background:#fffef4ef;border:1px solid #bccfb1;border-radius:14px;box-shadow:0 3px 12px #25452d18}
+.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps)>summary{list-style:none;padding:9px 13px;min-height:22px;line-height:22px;font-size:12px;cursor:pointer;text-align:center}
+.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps)>summary::-webkit-details-marker{display:none}
+.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps)[open]{width:min(520px,calc(100% - 24px));max-height:calc(100% - 80px);overflow:auto;box-sizing:border-box;padding:0 16px 12px;background:#fffef5f5;box-shadow:0 12px 32px #25452d35}
+.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps)[open]>summary{border-bottom:1px solid #d5dfcd;margin-bottom:8px}
+.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps) :is(p,li){font-size:14px;line-height:1.7}
+.compact-shell[data-trial=true] .first-steps,.compact-shell[data-trial=false] .trial-guide{display:none!important}
+/* Market controls float over the same full-height scene; detail stays scrollable. */
+.compact-shell[data-screen=market] #marketSquare{position:relative;max-width:none;margin:0;border:0;border-radius:0;overflow:visible}
+.compact-shell[data-screen=market] #marketSquare .market-plaza{height:max(420px,calc(100dvh - var(--shell-height,64px)))!important;box-sizing:border-box;border:0;border-radius:0}
+.compact-shell[data-screen=market] #marketSquare .market-heading{position:absolute;top:10px;left:14px;right:14px;padding:0;z-index:9;pointer-events:none}
+.compact-shell[data-screen=market] #marketSquare .market-heading>div{display:none}
+.compact-shell[data-screen=market] #marketSquare .market-count{margin-left:auto;background:#fffef2ee;font-size:12px;padding:9px 12px}
+.compact-shell[data-screen=market] #marketSquare .market-toolbar{position:absolute;left:12px;top:10px;z-index:10;padding:0;gap:6px;display:flex;flex-wrap:wrap;max-width:70%}
+.compact-shell[data-screen=market] #marketSquare .market-toolbar button{font-size:12px;min-height:40px;width:auto;padding:8px 10px}
+.compact-shell[data-screen=market] #marketSquare .market-detail{position:absolute;bottom:42px;left:12px;width:min(420px,calc(100% - 24px));max-height:35%;overflow:auto;box-sizing:border-box;margin:0;padding:12px;z-index:10;background:#fffef2ed;box-shadow:0 4px 18px #29473520}
+.compact-shell[data-screen=market] #marketSquare .market-bottom{position:absolute;right:8px;bottom:5px;padding:0;z-index:11}
+.compact-shell[data-screen=market] #marketSquare .market-note{position:absolute;right:8px;bottom:46px;width:min(350px,calc(100% - 32px));box-sizing:border-box;padding:12px;background:#fffef2;z-index:12;border:1px solid #bccfb1;border-radius:12px}
+@media(max-width:1099px){
+ .compact-shell .play-shell-bar{height:104px;grid-template-columns:auto minmax(60px,1fr) minmax(70px,1fr) auto auto auto;grid-template-rows:64px 40px;grid-template-areas:"brand mode weather wallet prices menu" "tabs tabs tabs tabs tabs tabs";column-gap:6px;row-gap:0;padding:0 10px}
+ .compact-shell .play-shell-bar .compact-tabs{justify-content:center;height:40px}
+ .compact-shell .play-shell-bar .compact-tabs button{flex:1;min-height:40px;padding:6px 8px}
+}
+@media(max-width:600px){
+ .compact-shell .play-shell-bar{grid-template-columns:minmax(85px,1fr) minmax(78px,1fr) auto auto auto;grid-template-rows:32px 32px 40px;grid-template-areas:"brand mode wallet prices menu" "weather weather weather weather weather" "tabs tabs tabs tabs tabs";gap:0 4px;padding:0 6px}
+ .compact-shell .play-shell-bar .brand{font-size:13px!important}.compact-shell .play-shell-bar #playMode{font-size:10px;min-height:32px;padding:4px 0}
+ .compact-shell .play-shell-bar #compactWeather{font-size:11px!important;padding:0;white-space:nowrap}
+ .compact-shell .play-shell-bar #compactPrices,.compact-shell .play-shell-bar #compactMenuButton{font-size:11px;min-height:32px;padding:5px}
+ .compact-shell .play-shell-bar .wallet{font-size:11px;padding:4px}.compact-shell .play-shell-bar .wallet strong{font-size:13px}
+ .compact-shell .play-shell-bar .compact-tabs button{font-size:12px;padding:6px 2px}
+ .compact-shell[data-screen=farm] :is(.trial-guide,.first-steps){top:106px}.compact-shell[data-screen=farm] :is(.trial-guide,.first-steps)>summary{min-height:26px;padding:7px 11px}
+ .compact-shell[data-screen=market] #marketSquare .market-toolbar{top:50px;max-width:calc(100% - 24px)}
+ .compact-shell[data-screen=market] #marketSquare .market-detail{max-height:29%;font-size:12px}
+}
