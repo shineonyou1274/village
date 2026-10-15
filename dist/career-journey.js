@@ -23,7 +23,8 @@
  }
  function stamps(base){
   const s=read();if(!s)return base;
-  const first=base.find(b=>b.id==='first-harvest')||{id:'first-harvest',title:'첫 수확',reason:'내 밭에서 작물 수확',value:s.farm?.picked||0,target:1,earned:(s.farm?.picked||0)>0};
+  const savedFirst=base.find(b=>b.id==='first-harvest'),picked=s.farm?.picked||0;
+  const first={id:'first-harvest',title:'첫 수확',reason:'내 밭에서 작물 수확',target:1,...savedFirst,value:Math.max(savedFirst?.value||0,picked),earned:savedFirst?.earned||picked>0};
   const defs=[['first-trade','첫 교환','다른 직업 친구와 물건 교환',Number(!!record.traded),1],['first-gift','첫 나눔','친구가 내 나눔 제안을 받기',Number(!!record.gift),1],['table-contribution','공동 식탁 기여','공동 식탁·도시락에 재료 보태기',Number(!!record.contributed),1],['job-production','직업 생산 3회','직업 생산·돌봄 생산을 3회 경험하기',record.production||0,3]];
   const added=defs.map(([id,title,reason,value,target])=>({id,title,reason,value,target,earned:value>=target}));
   return [first,...added,...base.filter(b=>b.id!=='first-harvest')];
