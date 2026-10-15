@@ -141,7 +141,12 @@ else if(kind==='donate'){if(room.phase!=='협력')err('아직 협력 시즌이 �
 await db.prepare('INSERT INTO commands(id,actor,room,kind,version1,version2,partner,state1,state2,room_version,offer,offer_data,item,qty,created) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(cmdId,p.id,room.id,kind,p.version,v2,partner,JSON.stringify(s),s2?JSON.stringify(s2):null,room.version,offerId,offerData?JSON.stringify(offerData):null,item,qty,now).run();return {ok:true}}
 export async function api(req,env){try{const u=new URL(req.url);if(!u.pathname.startsWith('/api/'))return null;const db=env.DB;if(!db)return json({error:'공동 플레이 서버가 연결되지 않았습니다.'},503);await init(db);if(u.pathname==='/api/health')return json({ok:true,storage:'server',version:6});const origin=req.headers.get('origin');if(origin&&origin!==u.origin)err('다른 사이트의 요청은 허용되지 않습니다.',403);const b=req.method==='POST'?await body(req):{};
 if(u.pathname==='/api/create'&&req.method==='POST'){
- if(!env.TEACHER_SETUP_KEY||await hash(String(b.setupKey||''))!==await hash(env.TEACHER_SETUP_KEY))err('교사 개설키를 확인해 주세요.',403);
+ const setupAllowed=!!env.TEACHER_SETUP_KEY&&await hash(String(b.setupKey||''))===await hash(env.TEACHER_SETUP_KEY);
+ if(!setupAllowed){
+  if(!req.headers.get('authorization'))err('교사로 먼저 입장하거나 교사 개설키를 확인해 주세요.',403);
+  const creator=await auth(req,db);
+  if(!creator.teacher)err('로그인한 교사만 새 학급을 만들 수 있어요.',403);
+ }
  const size=int(b.size,1,120),mode=b.roleMode===undefined?null:roleMode(b.roleMode);
  if(b.roleMode!==undefined&&!mode)err('직업 배정 방식을 선택해 주세요.');
  const id=random(),code=random(3).toUpperCase(),teacherKey=random(24),created=Date.now(),jobs=mode==='balanced'?balancedRoles(size):[];
