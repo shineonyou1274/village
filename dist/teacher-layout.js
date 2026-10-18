@@ -21,7 +21,15 @@
  const overview=cardOf('#roomTitle');overview.hidden=true;
  const remote=cardOf('#roomDay');remote.id='teacherRemote';remote.querySelector('h2').textContent='수업 리모컨';short(remote,'변경한 뒤 학급 전체에 적용하세요.');
  panels[0].append(remote);
- const fields=['roomPaused','roomMarket','roomPhase','roomWeather'];
+ const lessonControls=make('div','remote-options remote-big');lessonControls.setAttribute('aria-label','수업 시작과 끝');
+ let lessonSaving=false;
+ for(const [action,label] of [['start','▶ 수업 시작'],['end','■ 수업 끝'],['pause','⏸ 일시정지'],['resume','▶ 수업 이어가기']]){
+  const b=make('button','',label);b.type='button';b.dataset.lessonAction=action;
+  b.onclick=async()=>{if(lessonSaving)return;lessonSaving=true;syncControls();try{const d=await request('/api/teacher/lesson',{action});show(d);q('#roomPaused').value=d.room.paused?'1':'0';q('#teacherStatus').textContent=action==='start'?'수업을 시작했어요.':action==='end'?'수업을 마쳤어요. 자습은 계속할 수 있어요.':action==='pause'?'수업 활동을 잠시 멈췄어요. 자습은 계속할 수 있어요.':'수업을 이어가요.'}catch(e){q('#teacherStatus').textContent=e.message}finally{lessonSaving=false;syncControls()}};
+  lessonControls.append(b);
+ }
+ remote.querySelector('.teacher-grid').before(lessonControls);q('#roomPaused').closest('label').hidden=true;
+ const fields=['roomMarket','roomPhase','roomWeather'];
  fields.forEach(id=>{
   const input=q('#'+id),label=input.closest('label'),group=make('div','remote-options '+(id==='roomPaused'?'remote-big':''));group.setAttribute('role','group');group.setAttribute('aria-label',id==='roomPaused'?'수업 상태':id==='roomWeather'?'날씨·경제 상황':id==='roomMarket'?'장터':'시즌');
   [...input.options].forEach(option=>{const b=make('button','',id==='roomPaused'?(option.value==='0'?'▶ 진행':'⏸ 일시정지'):option.textContent);b.type='button';b.dataset.control=id;b.dataset.value=option.value;b.onclick=()=>{input.value=option.value;input.dispatchEvent(new Event('change',{bubbles:true}));syncControls()};group.append(b)});
@@ -32,7 +40,7 @@
  const dayrow=make('div','remote-day');dayrow.append(prev,dayInput,next);dayLabel.append(dayrow);
  const changeDay=delta=>{dayInput.value=Math.max(1,Math.min(365,Number(dayInput.value)+delta));dayInput.dispatchEvent(new Event('change',{bubbles:true}));syncControls()};prev.onclick=()=>changeDay(-1);next.onclick=()=>changeDay(1);
  const apply=q('#saveRoom');const hint=make('span','remote-dirty');hint.setAttribute('role','status');apply.after(hint);
- function syncControls(){remote.querySelectorAll('[data-control]').forEach(b=>b.setAttribute('aria-pressed',String(q('#'+b.dataset.control).value===b.dataset.value)));const r=data?.room;const dirty=!!r&&(lessonIntent!==null||Number(dayInput.value)!==r.day||Number(q('#roomWeather').value)!==r.weather||q('#roomPhase').value!==r.phase||(q('#roomMarket').value==='1')!==!!r.market||(q('#roomPaused').value==='1')!==!!r.paused);apply.classList.toggle('has-changes',dirty);apply.classList.toggle('primary',dirty);hint.textContent=dirty?'아직 적용하지 않은 변경이 있어요.':'';prev.disabled=Number(dayInput.value)<=1;next.disabled=Number(dayInput.value)>=365}
+ function syncControls(){lessonControls.querySelectorAll('button').forEach(b=>{const a=b.dataset.lessonAction,r=data?.room;b.disabled=lessonSaving||!r||(a==='start'?!!r.lessonActive:a==='end'?!r.lessonActive:a==='pause'?!r.lessonActive||r.paused:!r.lessonActive||!r.paused)});remote.querySelectorAll('[data-control]').forEach(b=>b.setAttribute('aria-pressed',String(q('#'+b.dataset.control).value===b.dataset.value)));const r=data?.room;const dirty=!!r&&(Number(dayInput.value)!==r.day||Number(q('#roomWeather').value)!==r.weather||q('#roomPhase').value!==r.phase||(q('#roomMarket').value==='1')!==!!r.market||(q('#roomPaused').value==='1')!==!!r.paused);apply.classList.toggle('has-changes',dirty);apply.classList.toggle('primary',dirty);hint.textContent=dirty?'아직 적용하지 않은 변경이 있어요.':'';prev.disabled=Number(dayInput.value)<=1;next.disabled=Number(dayInput.value)>=365}
  remote.addEventListener('change',syncControls);remote.addEventListener('input',syncControls);
  const tableCard=make('section','teacher-card');tableCard.id='teacherMeal';tableCard.append(make('h2','','공동 식탁'));const food=make('div','meal-progress');tableCard.append(food);
  const story=q('#teacherStory');tableCard.append(story);story.classList.remove('teacher-card');
@@ -68,7 +76,7 @@
   const m=d.mission,counts=m?.food||d.room.coop,target=m?.goal||d.room.goal;
   food.replaceChildren(...['상추','우유','사과','생선'].map((name,i)=>{const row=make('label','',`${name} ${counts[i]} / ${target}`),progress=make('progress');progress.max=Math.max(1,target);progress.value=counts[i];row.append(progress);return row}));
  }
- let layoutRoom='';const previousShow=show;show=function(d,force=false){if(layoutRoom!==d.room.id){goalContent.replaceChildren();layoutRoom=d.room.id}previousShow(d,force);bar.hidden=false;document.body.classList.add('teacher-signed-in');identity.textContent=`학급 ${d.room.code} · 학생 ${d.players.length}명`;day.textContent=`${d.room.day}일차 · ${q('#roomWeather').options[d.room.weather]?.textContent||''}`;status.textContent=`${d.room.paused?'⏸ 일시정지':'● 진행 중'} · 접속 ${d.players.filter(p=>p.online).length}/${d.players.length}`;status.classList.toggle('is-paused',!!d.room.paused);storyLayout(d);syncControls()};
+ let layoutRoom='';const previousShow=show;show=function(d,force=false){if(layoutRoom!==d.room.id){goalContent.replaceChildren();layoutRoom=d.room.id}previousShow(d,force);bar.hidden=false;document.body.classList.add('teacher-signed-in');identity.textContent=`학급 ${d.room.code} · 학생 ${d.players.length}명`;day.textContent=`${d.room.day}일차 · ${q('#roomWeather').options[d.room.weather]?.textContent||''}`;status.textContent=`${!d.room.lessonActive?'수업 없음':d.room.paused?'⏸ 수업 일시정지':'● 수업 중'} · 접속 ${d.players.filter(p=>p.online).length}/${d.players.length}`;status.classList.toggle('is-paused',!!d.room.paused);storyLayout(d);syncControls()};
  // Moving the start button means the legacy render guard cannot find it; move it back before a refresh.
  const previousStory=showTeacherStory;showTeacherStory=function(d){const start=goalContent.querySelector('#startClassStory');if(start){const grid=start.closest('.teacher-grid');story.append(grid);const msg=goalContent.querySelector('#storyTeacherMessage');if(msg)story.append(msg)}previousStory(d)};
  if(data)show(data);

@@ -3,8 +3,10 @@
  const actor=()=>campus?data?.actor:classroomData?.me?.id;
  const pending=()=>!!actor()&&sessionStorage.getItem(seen)!==actor();
  const fetchAPI=(path,body)=>campus?request(path,body):schoolFetch(path,body);
- let purpose,loading=false,historyActor='',lastGoal='',board=null,renderKey='';
+ let purpose,loading=false,historyActor='',lastGoal='',board=null,studyBoard=null,renderKey='';
  const button=(text,fn,primary=false)=>{const b=document.createElement('button');b.type='button';b.textContent=text;if(primary)b.className='primary';b.onclick=fn;return b};
+ const activeStudy=()=>campus?data?.current:studyBoard?.current;
+ const continueLabel=()=>{const c=activeStudy();if(!c)return '공부 시작';const gap=Math.max(0,Math.floor((Date.now()-c.tick)/1000));const seconds=Math.min(c.plan*60,c.elapsed+(c.status==='active'&&gap<45?gap:0));return '공부 이어가기 · '+String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0')};
  const done=()=>{sessionStorage.setItem(seen,actor());purpose?.close()};
  function focusStudy(){document.querySelector('[data-screen=study]')?.click();document.querySelector('[data-study-section=focus]')?.click();document.querySelector('.focus-card')?.scrollIntoView({block:'start'})}
  async function start(goal=''){
@@ -20,15 +22,22 @@
   if(!pending()||loading)return;
   if(document.querySelector('dialog[open]:not(.purpose-entry)'))return;
   if(!purpose){purpose=document.createElement('dialog');purpose.className='purpose-entry';purpose.setAttribute('aria-labelledby','purposeTitle');purpose.innerHTML='<h2 id="purposeTitle">무엇을 시작할까요?</h2><p>하고 싶은 일을 바로 시작해요.</p><div class="purpose-actions"></div><label class="purpose-remember"><input type="checkbox"> 내 전용 기기에서만 기억하기</label><p role="status"></p>';purpose.addEventListener('cancel',e=>e.preventDefault());document.body.append(purpose);const remember=purpose.querySelector('.purpose-remember input');remember.checked=!!window.StudentMemory.read();remember.onchange=async()=>{window.StudentMemory.remember(remember.checked);if(remember.checked){try{const d=campus?await fetchAPI('/api/state'):classroomData;window.StudentMemory.save(d,sessionStorage.getItem('village-student-token'))}catch{remember.checked=false;window.StudentMemory.remember(false);purpose.querySelector('[role=status]').textContent='기기에 저장하지 못했어요. 다시 선택해 주세요.'}}}}
-  purpose.querySelector('.purpose-remember').hidden=campus?!!data?.village?.trial:!!classroomData?.me?.state?.trial;const r=campus?board?.room:classroomData.room;const nextKey=JSON.stringify([actor(),lastGoal,r?.lessonActive,r?.paused,r?.phase]);if(purpose.open&&renderKey===nextKey)return;renderKey=nextKey;
+  purpose.querySelector('.purpose-remember').hidden=campus?!!data?.village?.trial:!!classroomData?.me?.state?.trial;const r=campus?board?.room:classroomData.room;const nextKey=JSON.stringify([actor(),lastGoal,r?.lessonActive,r?.paused,r?.phase,activeStudy()?.id,activeStudy()?.status]);if(purpose.open&&renderKey===nextKey)return;renderKey=nextKey;
   const host=purpose.querySelector('.purpose-actions');host.replaceChildren();
-  if(r?.lessonActive&&!r.paused)host.append(button('오늘의 수업',()=>{done();if(campus)location.href='./#farm';else{gameNavigate(r.phase==='협력'?'season':'farm');window.CareerJourney?.sync()}},true));
-  if(lastGoal)host.append(button(`지난 목표로 다시 시작: “${lastGoal}” · 25분`,()=>start(lastGoal),!r?.lessonActive));
-  host.append(button('공부 시작',()=>start(),!r?.lessonActive),button('마을 들어가기',()=>{done();if(campus)location.href='./#farm';else{gameNavigate('farm');window.CareerJourney?.sync()}}));
+  const lesson=!!r?.lessonActive;
+  if(lesson)host.append(button('오늘의 수업',()=>{done();if(campus)location.href='./#farm';else{gameNavigate(r.phase==='협력'?'season':'farm');window.CareerJourney?.sync()}},true));
+  if(activeStudy()){const resume=button(continueLabel(),()=>start(),!lesson);resume.dataset.continueStudy='';host.append(resume)}
+  else{
+   if(lastGoal&&!lesson)host.append(button(`지난 목표로 다시 시작: “${lastGoal}” · 25분`,()=>start(lastGoal),true));
+   const study=button('공부 시작',()=>start(lesson?lastGoal:''),!lesson);study.setAttribute('aria-label','공부 시작');
+   if(lesson&&lastGoal){const hint=document.createElement('small');hint.textContent=`지난 목표: “${lastGoal}” · 25분`;hint.style.display='block';study.append(hint)}host.append(study);
+  }
+  if(!lesson)host.append(button('마을 들어가기',()=>{done();if(campus)location.href='./#farm';else{gameNavigate('farm');window.CareerJourney?.sync()}}));
   if(!purpose.open)purpose.showModal();
-  if(historyActor!==actor()){historyActor=actor();const who=actor();fetchAPI('/api/campus').then(d=>{if(actor()!==who)return;lastGoal=d.history?.find(s=>s.goal&&s.goal!=='자유 공부')?.goal||'';if(purpose.open)showPurpose()}).catch(()=>{});if(campus)fetchAPI('/api/state').then(d=>{board=d;if(purpose.open)showPurpose()}).catch(()=>{})}
+  if(historyActor!==actor()){historyActor=actor();const who=actor();fetchAPI('/api/campus').then(d=>{if(actor()!==who)return;studyBoard=d;lastGoal=d.history?.find(s=>s.goal&&s.goal!=='자유 공부')?.goal||'';if(purpose.open)showPurpose()}).catch(()=>{});if(campus)fetchAPI('/api/state').then(d=>{board=d;if(purpose.open)showPurpose()}).catch(()=>{})}
  }
  window.PurposeEntry={pending,start};
+ setInterval(()=>{if(purpose?.open){const b=purpose.querySelector('[data-continue-study]');if(b)b.textContent=continueLabel()}},1000);
  if(campus){
   const before=display;display=function(d){before(d);if(new URLSearchParams(location.search).has('quickStudy')&&d.current){sessionStorage.setItem(seen,d.actor);const url=new URL(location.href);url.searchParams.delete('quickStudy');history.replaceState(null,'',url.pathname+url.search+url.hash);setTimeout(focusStudy,0)}else showPurpose();const input=document.querySelector('#quickGoal');if(input&&document.activeElement!==input)input.value=d.current?.goal==='자유 공부'?'':d.current?.goal||''};
   const form=document.createElement('form');form.className='quick-goal';form.innerHTML='<label>할 일은 나중에 적어도 돼요.<input id="quickGoal" maxlength="120" placeholder="어떤 공부를 할까요?"></label><button>할 일 저장</button><p role="status"></p>';const goalDetails=document.createElement('details');const goalSummary=document.createElement('summary');goalSummary.textContent='할 일 적기 · 선택이에요';goalDetails.className='quick-goal-details';goalDetails.append(goalSummary,form);document.querySelector('#activeGoal').after(goalDetails);form.onsubmit=async e=>{e.preventDefault();const b=form.querySelector('button');b.disabled=true;try{const d=await request('/api/campus/study',{action:'goal',id:data.current.id,goal:form.querySelector('input').value});display(d);form.querySelector('p').textContent='할 일을 저장했어요.'}catch(e){form.querySelector('p').textContent=e.message}finally{b.disabled=false}};
