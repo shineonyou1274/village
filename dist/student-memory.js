@@ -1,4 +1,4 @@
-// A remembered class account is a choice on the entry screen, never an automatic login.
+// Auto-restore only on a device the student explicitly opted to remember.
 (()=>{
  const key='village-remembered-student-v1';
  const optKey='village-remember-device-v1';
@@ -16,7 +16,7 @@
   restore(){
    if(location.hash.startsWith('#join=')){
     const link=location.hash.slice(6);
-    this.linkAttempted=true;
+    this.linkAttempted=true;sessionStorage.removeItem('village-purpose-seen');
     history.replaceState(null,'',location.pathname+'#farm');
     if(!/^[a-f0-9]{96}$/i.test(link))return '';
     const token=link.toLowerCase();
@@ -25,8 +25,9 @@
     sessionStorage.setItem('village-student-token',token);
     return token;
    }
-   if(new URLSearchParams(location.search).has('entry'))return '';
-   const token=sessionStorage.getItem('village-student-token');
+   if(new URLSearchParams(location.search).has('entry')){sessionStorage.removeItem('village-purpose-seen');return ''}
+   let token=sessionStorage.getItem('village-student-token');
+   if(!sameTab()){sessionStorage.removeItem('village-purpose-seen');const saved=read();if(saved){confirmTab();token=saved.token;sessionStorage.setItem('village-student-token',token);return token}}
    if(!token)return '';
    // Browsers may copy sessionStorage into a newly opened tab. A copied login still needs a choice.
    if(!sameTab()){sessionStorage.removeItem('village-student-token');sessionStorage.removeItem('village-pending-command');return ''}
