@@ -1,10 +1,29 @@
+# Student-first-screen preview branch
+
+This branch deploys ONLY to the independent student preview Site. Its D1 database and teacher setup key are separate from production. Never use E02B01, 1D86B5, production student codes, or production teacher credentials here. The original judging Site remains v112 and must not be deployed during October 19–26, 2026.
+
+## 미리보기 테스트 학급 만들기
+
+1. https://shiny-village-student-preview.peace-shiny.chatgpt.site/teacher 에서 **기록·설정 → 새 학급 만들기**를 엽니다(로그인 전에는 새 학급 만들기 영역).
+2. 별도로 받은 **미리보기 전용 교사 개설키**를 입력하고 학생 수 4명을 선택합니다. 개설키는 GitHub에 저장하지 않습니다.
+3. 생성된 학급 코드·교사 코드·학생 코드 CSV를 보관합니다. **수업 준비 → 학생 입장 링크**로 학생별 링크를 열 수 있습니다.
+4. 새 학급에서는 목적 화면에 공부 시작·마을 들어가기만 나옵니다. 교사가 **수업 중 → 수업 리모컨 → 진행 → 학급 전체에 적용**을 누르면 다음 입장부터 오늘의 수업이 맨 위에 나옵니다. 일시정지를 적용하면 사라집니다.
+5. 목적 화면에서 공부 시작 1번으로 빈자리 배정과 25분 타이머가 시작됩니다. 할 일은 공부 중 적을 수 있고, 마무리한 공부 목표는 다음 입장 때 다시 시작할 수 있습니다.
+6. 내 전용 기기에서만 기억하기를 켠 뒤 새 탭으로 열면 코드 없이 목적 화면으로 들어옵니다. 공용 기기에서는 체크하지 않습니다.
+
+### Local regression
+
+Run `server.mjs` with `PORT=8802` and a new isolated `DB_FILE`, then `node tests/purpose-study.cjs` and `node tests/purpose-entry.cjs`. Tests only accept localhost. Real teacher/student keys stay in ignored `private/` or `test-output/` paths.
+
+---
+
 # Shiny Village · 이어지는 마을
 
 학생이 농사와 1차산업 직업을 경험하고 장터에서 교환·나눔을 하며, 운송·전력·품질·급식 같은 서비스 활동으로 협력하는 진로 체험 웹 게임입니다.
 
-- 학생: https://ieum-village-play-0921.peace-shiny.chatgpt.site/
-- 체험: https://ieum-village-play-0921.peace-shiny.chatgpt.site/demo.html
-- 교사: https://ieum-village-play-0921.peace-shiny.chatgpt.site/teacher.html
+- 학생: https://shiny-village-student-preview.peace-shiny.chatgpt.site/
+- 체험: https://shiny-village-student-preview.peace-shiny.chatgpt.site/demo.html
+- 교사: https://shiny-village-student-preview.peace-shiny.chatgpt.site/teacher.html
 
 ## 제출 소스 구성
 

@@ -1,6 +1,6 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
-const base=process.env.CONTEST_URL||'https://ieum-village-play-0921.peace-shiny.chatgpt.site';
+const base=process.env.CONTEST_URL||'https://shiny-village-student-preview.peace-shiny.chatgpt.site';
 const file='private/nwec26-judging-class.json';await mkdir('private',{recursive:true});
 async function request(route,body,token){const r=await fetch(base+route,{method:body?'POST':'GET',headers:{'content-type':'application/json',...(token?{authorization:'Bearer '+token}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(30000)});const d=await r.json();if(!r.ok)throw Error(`${route}: ${r.status} ${d.error}`);return d}
 let room;if(existsSync(file)){room=JSON.parse(await readFile(file,'utf8'));if(room.base!==base)throw Error('Existing judging class has another origin');}
